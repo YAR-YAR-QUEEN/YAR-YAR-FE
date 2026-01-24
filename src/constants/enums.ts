@@ -8,7 +8,7 @@ export type ItemType = 'FILTER' | 'BUFF';
 
 export type EffectType = 'REELS_MULTIPLIER' | 'AUTHORITY_BUFF';
 
-export type MindsimReason =
+export type MinsimReason =
   | 'REELS_SETTLEMENT'
   | 'ITEM_PURCHASE'
   | 'DAILY_DECAY'
