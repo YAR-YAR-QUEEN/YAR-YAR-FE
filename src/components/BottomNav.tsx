@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 
 type RouteType = '/' | '/faction' | '/market' | '/profile';
@@ -17,6 +18,7 @@ interface TabItem {
 }
 
 export function BottomNav({ isNight, currentRoute, onNavigate }: BottomNavProps) {
+  const insets = useSafeAreaInsets();
   const tabs: TabItem[] = [
     { id: '/faction', label: '정책', iconName: 'sliders' },
     { id: '/', label: '피드', iconName: 'home' },
@@ -29,6 +31,7 @@ export function BottomNav({ isNight, currentRoute, onNavigate }: BottomNavProps)
       style={[
         styles.nav,
         isNight ? styles.navNight : styles.navDay,
+        { height: 64 + insets.bottom, paddingBottom: 8 + insets.bottom },
       ]}
     >
       {tabs.map((tab) => {
