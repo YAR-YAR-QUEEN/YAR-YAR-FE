@@ -6,6 +6,7 @@ import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
 import { FactionPage } from './src/pages/FactionPage';
 import { MarketPage } from './src/pages/MarketPage';
+import { ProfilePage } from './src/pages/ProfilePage';
 
 // Route 타입 정의
 type RouteType = '/' | '/faction' | '/market' | '/profile' | '/login' | '/signup' | '/reaction' | '/filming' | '/petition';
@@ -69,7 +70,7 @@ export default function App() {
               <MarketPage isNight={isNight} />
             )}
             {currentRoute === '/profile' && (
-              <PlaceholderPage title="프로필 페이지" isNight={isNight} />
+              <ProfilePage isNight={isNight} />
             )}
             {currentRoute === '/petition' && (
               <PlaceholderPage title="상소문 페이지" isNight={isNight} />
