@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
+import { FactionPage } from './src/pages/FactionPage';
 
 // Route 타입 정의
 type RouteType = '/' | '/faction' | '/market' | '/profile' | '/login' | '/signup' | '/reaction' | '/filming' | '/petition';
@@ -61,7 +62,7 @@ export default function App() {
               />
             )}
             {currentRoute === '/faction' && (
-              <PlaceholderPage title="정책 페이지" isNight={isNight} />
+              <FactionPage isNight={isNight} />
             )}
             {currentRoute === '/market' && (
               <PlaceholderPage title="신문물 페이지" isNight={isNight} />
