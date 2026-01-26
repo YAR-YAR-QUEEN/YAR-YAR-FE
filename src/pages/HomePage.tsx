@@ -19,7 +19,7 @@ interface HomePageProps {
 }
 
 export function HomePage({ onNavigate }: HomePageProps) {
-  const { isNight, toggleTime } = useDayNight();
+  const { isNight, toggleDebugTime } = useDayNight();
   
   return (
     <View
@@ -28,20 +28,16 @@ export function HomePage({ onNavigate }: HomePageProps) {
         isNight ? styles.containerNight : styles.containerDay,
       ]}
     >
-      {/* Day/Night Toggle Button */}
+      {/* Debug Button */}
       <TouchableOpacity
-        onPress={toggleTime}
+        onPress={toggleDebugTime}
         style={[
           styles.toggleButton,
           isNight ? styles.toggleButtonNight : styles.toggleButtonDay,
         ]}
         activeOpacity={0.8}
       >
-        {isNight ? (
-          <Ionicons name="sunny" size={20} color="#60a5fa" />
-        ) : (
-          <Ionicons name="moon" size={20} color="#78350f" />
-        )}
+        <Ionicons name="moon" size={20} color={isNight ? '#60a5fa' : '#78350f'} />
       </TouchableOpacity>
 
       <View style={styles.mainContent}>

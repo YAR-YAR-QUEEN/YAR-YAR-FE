@@ -31,6 +31,11 @@ export interface LoginResponseDto {
 	user: UserDto;
 }
 
+export interface TimeResponseDto {
+	epochSeconds: number;
+	timeScale: number;
+}
+
 export interface GameStateDto {
 	dayCount: number;
 	phase: Phase;
