@@ -14,6 +14,7 @@ import { PetitionPage } from './src/pages/PetitionPage';
 import { InventoryPage } from './src/pages/InventoryPage';
 import { FilmingPage } from './src/pages/FilmingPage';
 import { AnalysisPage } from './src/pages/AnalysisPage';
+import { ReactionPage } from './src/pages/ReactionPage';
 
 // Route 타입 정의
 type RouteType =
@@ -95,7 +96,7 @@ export default function App() {
               <PetitionPage isNight={isNight} onNavigate={handleNavigate} />
             )}
             {currentRoute === '/reaction' && (
-              <PlaceholderPage title="백성 반응 페이지" isNight={isNight} />
+              <ReactionPage onNavigate={handleNavigate} />
             )}
             {currentRoute === '/login' && (
               <LoginPage onNavigate={handleNavigate} />
