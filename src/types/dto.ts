@@ -122,6 +122,28 @@ export interface PetitionListItemResponseDto {
 	createdAt: string;
 }
 
+export interface ReelsAnalysisScoresDto {
+	dopamine_score: number;
+	virality_score: number;
+	challenge_difficulty: number;
+}
+
+export interface ReelsAnalysisDto {
+	scores: ReelsAnalysisScoresDto;
+	comment: string;
+	breakdown: {
+		dopamine: Record<string, string>;
+		virality: Record<string, string>;
+		difficulty: Record<string, string>;
+	};
+}
+
+export interface UploadAnalyzeResponseDto {
+	videoUrl: string;
+	reelsId: number;
+	analysis: ReelsAnalysisDto;
+}
+
 export interface ReelsUploadRequestDto {
 	videoUrl: string;
 	durationSec: number;

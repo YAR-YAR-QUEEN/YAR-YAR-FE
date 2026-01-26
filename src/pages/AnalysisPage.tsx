@@ -1,47 +1,86 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { useReels } from '../contexts/ReelsContext';
 
 interface AnalysisPageProps {
   onNavigate?: (route: string) => void;
 }
 
-const ANALYSIS = {
+const FALLBACK = {
   dopamine: 8.5,
   buzz: 7.2,
   awareness: 6.8,
   totalScore: 7.5,
   comment:
-    '훌륭합니다! 커피를 마시는 자연스러운 연기가 백성들의 공감을 이끌어냈습니다. 특히 마지막 윙크가 화제성을 크게 높였어요.',
+    '방금 촬영한 영상이 백성들의 공감을 얻을 가능성이 높습니다. 조금만 더 편집하면 좋겠습니다.',
   highlights: [
     '자연스러운 연기 (+1.2 도파민)',
-    '트렌디한 소품 사용 (+0.8 화제성)',
-    '친근한 표정 (+0.5 인지도)',
+    '선명한 화면 (+0.8 버즈)',
+    '깔끔한 구성 (+0.5 인지도)',
   ],
 };
 
+const buildHighlights = (breakdown?: {
+  dopamine: Record<string, string>;
+  virality: Record<string, string>;
+  difficulty: Record<string, string>;
+}) => {
+  if (!breakdown) {
+    return FALLBACK.highlights;
+  }
+
+  const results: string[] = [];
+  const pushEntries = (label: string, items: Record<string, string>) => {
+    for (const [key, value] of Object.entries(items)) {
+      results.push(`${label} ${key}: ${value}`);
+      if (results.length >= 3) {
+        return;
+      }
+    }
+  };
+
+  pushEntries('도파민', breakdown.dopamine);
+  if (results.length < 3) {
+    pushEntries('버즈', breakdown.virality);
+  }
+  if (results.length < 3) {
+    pushEntries('난이도', breakdown.difficulty);
+  }
+
+  return results.length ? results : FALLBACK.highlights;
+};
+
 export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
-  const rating = Math.floor(ANALYSIS.totalScore / 2);
+  const { analysisResult } = useReels();
+  const scores = analysisResult?.analysis?.scores;
+  const dopamine = scores?.dopamine_score ?? FALLBACK.dopamine;
+  const buzz = scores?.virality_score ?? FALLBACK.buzz;
+  const awareness = scores?.challenge_difficulty ?? FALLBACK.awareness;
+  const avgScore = (dopamine + buzz + awareness) / 3;
+  const totalScore = Number((avgScore / 10).toFixed(1));
+  const comment = analysisResult?.analysis?.comment ?? FALLBACK.comment;
+  const highlights = buildHighlights(analysisResult?.analysis?.breakdown);
+  const rating = Math.floor(totalScore / 2);
+
   return (
     <View style={[styles.container, styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.headerEmoji}>🎬</Text>
-          <Text style={[styles.title, styles.titleDay]}>
-            릴스 분석 완료
-          </Text>
+          <Text style={styles.headerEmoji}>🎯</Text>
+          <Text style={[styles.title, styles.titleDay]}>릴스 분석 완료</Text>
           <Text style={[styles.subtitle, styles.subtitleDay]}>
             AI가 방금 촬영한 릴스를 분석했습니다
           </Text>
         </View>
 
         <View style={[styles.scoreCard, styles.scoreCardDay]}>
-          <Text style={styles.scoreLabel}>종합 평가</Text>
-          <Text style={styles.scoreValue}>{ANALYSIS.totalScore}</Text>
+          <Text style={styles.scoreLabel}>종합 점수</Text>
+          <Text style={styles.scoreValue}>{totalScore}</Text>
           <View style={styles.starRow}>
             {Array.from({ length: 5 }).map((_, idx) => (
               <Text key={idx} style={[styles.star, idx < rating ? null : styles.starMuted]}>
-                ⭐
+                ★
               </Text>
             ))}
           </View>
@@ -49,18 +88,14 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
 
         <View style={styles.metricsRow}>
           {[
-            { label: '도파민', value: ANALYSIS.dopamine, icon: '🔥' },
-            { label: '화제성', value: ANALYSIS.buzz, icon: '⚡' },
-            { label: '인지도', value: ANALYSIS.awareness, icon: '👥' },
+            { label: '도파민', value: dopamine, icon: '🔥' },
+            { label: '버즈', value: buzz, icon: '⚡' },
+            { label: '인지도', value: awareness, icon: '👀' },
           ].map((metric) => (
             <View key={metric.label} style={[styles.metricCard, styles.metricCardDay]}>
               <Text style={styles.metricIcon}>{metric.icon}</Text>
-              <Text style={[styles.metricLabel, styles.subtitleDay]}>
-                {metric.label}
-              </Text>
-              <Text style={[styles.metricValue, styles.titleDay]}>
-                {metric.value}
-              </Text>
+              <Text style={[styles.metricLabel, styles.subtitleDay]}>{metric.label}</Text>
+              <Text style={[styles.metricValue, styles.titleDay]}>{metric.value}</Text>
             </View>
           ))}
         </View>
@@ -68,28 +103,20 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
         <View style={[styles.commentCard, styles.commentCardDay]}>
           <View style={styles.commentHeader}>
             <Feather name="sparkles" size={14} color="#3b82f6" />
-            <Text style={[styles.commentTitle, styles.titleDay]}>
-              AI 분석 코멘트
-            </Text>
+            <Text style={[styles.commentTitle, styles.titleDay]}>AI 분석 코멘트</Text>
           </View>
-          <Text style={[styles.commentText, styles.bodyDay]}>
-            {ANALYSIS.comment}
-          </Text>
+          <Text style={[styles.commentText, styles.bodyDay]}>{comment}</Text>
         </View>
 
         <View style={styles.highlightSection}>
           <View style={styles.highlightHeader}>
             <Feather name="trending-up" size={16} color="#78350f" />
-            <Text style={[styles.highlightTitle, styles.titleDay]}>
-              주요 하이라이트
-            </Text>
+            <Text style={[styles.highlightTitle, styles.titleDay]}>주요 하이라이트</Text>
           </View>
-          {ANALYSIS.highlights.map((item) => (
+          {highlights.map((item) => (
             <View key={item} style={[styles.highlightItem, styles.highlightDay]}>
-              <Text style={styles.checkMark}>✓</Text>
-              <Text style={[styles.highlightText, styles.bodyDay]}>
-                {item}
-              </Text>
+              <Text style={styles.checkMark}>✔</Text>
+              <Text style={[styles.highlightText, styles.bodyDay]}>{item}</Text>
             </View>
           ))}
         </View>
@@ -100,7 +127,7 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
           onPress={() => onNavigate?.('/')}
         >
           <Feather name="home" size={18} color="#fff" />
-          <Text style={styles.ctaText}>피드로 돌아가기</Text>
+          <Text style={styles.ctaText}>궁으로 돌아가기</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

@@ -1,12 +1,33 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { usePetition } from '../contexts/PetitionContext';
 
 interface StreetPageProps {
   onNavigate?: (route: string) => void;
 }
 
 export function StreetPage({ onNavigate }: StreetPageProps) {
+  const { selectedPetition } = usePetition();
+  const missionTitle = selectedPetition
+    ? selectedPetition.type === 'POSITIVE'
+      ? '기쁜 소식'
+      : '어두운 소식'
+    : '오늘의 미션';
+  const missionDesc =
+    selectedPetition?.description ??
+    '한양 백성들의 도파민 부족 해결을 위한 상소문입니다.';
+  const tags = selectedPetition
+    ? [
+        { label: `도파민 +${selectedPetition.dopamine}`, color: 'red' as const },
+        { label: `버즈 +${selectedPetition.buzz}`, color: 'yellow' as const },
+        { label: `인지 +${selectedPetition.awareness}`, color: 'blue' as const },
+      ]
+    : [
+        { label: '도파민 +1.5', color: 'red' as const },
+        { label: '버즈 +1.0', color: 'yellow' as const },
+      ];
+
   return (
     <View style={[styles.container, styles.containerDay]}>
       <View style={styles.lanternBackdrop}>
@@ -25,17 +46,35 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
           <View style={styles.missionRow}>
             <Text style={styles.missionEmoji}>📜</Text>
             <View style={styles.missionBody}>
-              <Text style={[styles.missionTitle, styles.textMainDay]}>오늘의 미션</Text>
-              <Text style={[styles.missionDesc, styles.subtitleDay]}>
-                한양 백성들의 도파민 부족 해결
-              </Text>
+              <Text style={[styles.missionTitle, styles.textMainDay]}>{missionTitle}</Text>
+              <Text style={[styles.missionDesc, styles.subtitleDay]}>{missionDesc}</Text>
               <View style={styles.missionTags}>
-                <View style={[styles.tag, styles.tagRed]}>
-                  <Text style={[styles.tagText, styles.tagRedText]}>🔥 도파민 +1.5</Text>
-                </View>
-                <View style={[styles.tag, styles.tagYellow]}>
-                  <Text style={[styles.tagText, styles.tagYellowText]}>⚡ 화제성 +1.0</Text>
-                </View>
+                {tags.map((tag) => (
+                  <View
+                    key={tag.label}
+                    style={[
+                      styles.tag,
+                      tag.color === 'red'
+                        ? styles.tagRed
+                        : tag.color === 'yellow'
+                          ? styles.tagYellow
+                          : styles.tagBlue,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.tagText,
+                        tag.color === 'red'
+                          ? styles.tagRedText
+                          : tag.color === 'yellow'
+                            ? styles.tagYellowText
+                            : styles.tagBlueText,
+                      ]}
+                    >
+                      {tag.label}
+                    </Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
@@ -53,7 +92,7 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
             <View style={styles.actionBody}>
               <Text style={[styles.actionTitle, styles.textMainDay]}>아이템 사용하기</Text>
               <Text style={[styles.actionDesc, styles.subtitleDay]}>
-                보유한 신문물로 릴스 강화
+                보유한 아이템으로 릴스 강화
               </Text>
             </View>
             <Feather name="sparkles" size={18} color="#a16207" />
@@ -68,10 +107,10 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
               <Feather name="camera" size={24} color="#2563eb" />
             </View>
             <View style={styles.actionBody}>
-              <Text style={[styles.actionTitle, styles.textMainDay]}>숏폼 촬영하기</Text>
+              <Text style={[styles.actionTitle, styles.textMainDay]}>릴스 촬영하기</Text>
               <Text style={[styles.actionDesc, styles.subtitleDay]}>오늘의 미션 수행</Text>
             </View>
-            <Text style={styles.actionEmoji}>📹</Text>
+            <Text style={styles.actionEmoji}>📷</Text>
           </TouchableOpacity>
         </View>
 
@@ -188,6 +227,12 @@ const styles = StyleSheet.create({
   },
   tagYellowText: {
     color: '#d97706',
+  },
+  tagBlue: {
+    backgroundColor: '#dbeafe',
+  },
+  tagBlueText: {
+    color: '#2563eb',
   },
   actions: {
     gap: 12,

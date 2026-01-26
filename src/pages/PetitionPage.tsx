@@ -10,6 +10,7 @@ import {
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { useGameState } from '../contexts/GameStateContext';
+import { usePetition } from '../contexts/PetitionContext';
 import { fetchPetitionDetail, fetchPetitions } from '../services/petitionService';
 import type { PetitionDetailDto, PetitionListItemDto } from '../types/dto';
 
@@ -72,6 +73,7 @@ const getDifficulty = (petition: PetitionListItemDto): Difficulty => {
 export function PetitionPage({ onNavigate }: PetitionPageProps) {
   const { isNight } = useDayNight();
   const { gameState } = useGameState();
+  const { setSelectedPetition } = usePetition();
   const [petitions, setPetitions] = useState<PetitionListItemDto[]>([]);
   const [detail, setDetail] = useState<PetitionDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,9 +107,15 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
       });
   };
 
+  const handleGoStreet = (petition: PetitionListItemDto) => {
+    setSelectedPetition(petition);
+    onNavigate?.('/street');
+  };
+
   const missions = petitions.length
     ? petitions.map((petition) => ({
         id: petition.id,
+        petition,
         title: petition.type === 'POSITIVE' ? '기쁜 소식' : '어두운 소식',
         content: petition.description,
         stats: {
@@ -171,6 +179,8 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
               awareness: detailForMission?.awareness ?? mission.stats.awareness,
             };
 
+            const petitionSource = 'petition' in mission ? mission.petition : null;
+
             return (
               <TouchableOpacity
                 key={mission.id}
@@ -214,9 +224,18 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
                   </View>
                 </View>
 
-                <View style={[styles.actionButton, isNight ? styles.actionButtonNight : styles.actionButtonDay]}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  style={[styles.actionButton, isNight ? styles.actionButtonNight : styles.actionButtonDay]}
+                  onPress={() => {
+                    if (petitionSource) {
+                      handleGoStreet(petitionSource);
+                    }
+                  }}
+                  disabled={!petitionSource}
+                >
                   <Text style={styles.actionButtonText}>저잣거리 나가기</Text>
-                </View>
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })}

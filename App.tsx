@@ -4,6 +4,8 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DayNightProvider, useDayNight } from './src/contexts/DayNightContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { GameStateProvider } from './src/contexts/GameStateContext';
+import { PetitionProvider } from './src/contexts/PetitionContext';
+import { ReelsProvider } from './src/contexts/ReelsContext';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
@@ -124,9 +126,13 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <GameStateProvider>
-          <DayNightProvider>
-            <AppContent />
-          </DayNightProvider>
+          <PetitionProvider>
+            <ReelsProvider>
+              <DayNightProvider>
+                <AppContent />
+              </DayNightProvider>
+            </ReelsProvider>
+          </PetitionProvider>
         </GameStateProvider>
       </AuthProvider>
     </SafeAreaProvider>
