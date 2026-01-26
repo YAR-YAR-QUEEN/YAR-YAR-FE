@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { AppState } from 'react-native';
 import { JoseonTime, getJoseonTime } from '../utils/timeUtils';
-import { fetchServerTime } from '../services/time';
+import { fetchServerTime, setDayPhase, setNightPhase } from '../services/time';
 
 interface DayNightContextType {
   isNight: boolean;
@@ -75,8 +75,20 @@ export function DayNightProvider({ children }: { children: ReactNode }) {
   }, [syncTime]);
 
   const toggleDebugTime = useCallback(() => {
-    setDebugOffsetHours((prev) => (prev === 0 ? 12 : 0));
-  }, []);
+    setDebugOffsetHours((prev) => {
+      const nextOffset = prev === 0 ? 12 : 0;
+      const isNightNow = currentTime.isNight;
+      const willBeNight = isNightNow ? nextOffset === 0 : nextOffset !== 0;
+
+      if (willBeNight) {
+        void setNightPhase();
+      } else {
+        void setDayPhase();
+      }
+
+      return nextOffset;
+    });
+  }, [currentTime.isNight]);
 
   return (
     <DayNightContext.Provider
