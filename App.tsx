@@ -13,6 +13,7 @@ import { StreetPage } from './src/pages/StreetPage';
 import { PetitionPage } from './src/pages/PetitionPage';
 import { InventoryPage } from './src/pages/InventoryPage';
 import { FilmingPage } from './src/pages/FilmingPage';
+import { AnalysisPage } from './src/pages/AnalysisPage';
 
 // Route 타입 정의
 type RouteType =
@@ -26,7 +27,8 @@ type RouteType =
   | '/filming'
   | '/petition'
   | '/street'
-  | '/inventory';
+  | '/inventory'
+  | '/analysis';
 
 export default function App() {
   // 낮/밤 상태
@@ -109,6 +111,9 @@ export default function App() {
             )}
             {currentRoute === '/filming' && (
               <FilmingPage onNavigate={handleNavigate} />
+            )}
+            {currentRoute === '/analysis' && (
+              <AnalysisPage onNavigate={handleNavigate} />
             )}
           </View>
 
