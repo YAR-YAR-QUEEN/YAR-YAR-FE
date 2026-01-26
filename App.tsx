@@ -9,9 +9,21 @@ import { MarketPage } from './src/pages/MarketPage';
 import { ProfilePage } from './src/pages/ProfilePage';
 import { LoginPage } from './src/pages/LoginPage';
 import { SignupPage } from './src/pages/SignupPage';
+import { StreetPage } from './src/pages/StreetPage';
+import { PetitionPage } from './src/pages/PetitionPage';
 
 // Route 타입 정의
-type RouteType = '/' | '/faction' | '/market' | '/profile' | '/login' | '/signup' | '/reaction' | '/filming' | '/petition';
+type RouteType =
+  | '/'
+  | '/faction'
+  | '/market'
+  | '/profile'
+  | '/login'
+  | '/signup'
+  | '/reaction'
+  | '/filming'
+  | '/petition'
+  | '/street';
 
 export default function App() {
   // 낮/밤 상태
@@ -75,7 +87,7 @@ export default function App() {
               <ProfilePage isNight={isNight} />
             )}
             {currentRoute === '/petition' && (
-              <PlaceholderPage title="상소문 페이지" isNight={isNight} />
+              <PetitionPage isNight={isNight} onNavigate={handleNavigate} />
             )}
             {currentRoute === '/reaction' && (
               <PlaceholderPage title="백성 반응 페이지" isNight={isNight} />
@@ -85,6 +97,9 @@ export default function App() {
             )}
             {currentRoute === '/signup' && (
               <SignupPage onNavigate={handleNavigate} />
+            )}
+            {currentRoute === '/street' && (
+              <StreetPage onNavigate={handleNavigate}/>
             )}
           </View>
 
