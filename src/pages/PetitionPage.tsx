@@ -20,13 +20,16 @@ interface PetitionPageProps {
 
 type Difficulty = '상' | '중' | '하';
 
-const FALLBACK_MISSIONS: Array<{
+type Mission = {
   id: number;
   title: string;
   content: string;
   stats: { dopamine: number; buzz: number; awareness: number };
   difficulty: Difficulty;
-}> = [
+  petition?: PetitionListItemDto;
+};
+
+const FALLBACK_MISSIONS: Mission[] = [
   {
     id: 1,
     title: '한양 백성들의 도파민 부족에 관한 건',
@@ -112,7 +115,7 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
     onNavigate?.('/street');
   };
 
-  const missions = petitions.length
+  const missions: Mission[] = petitions.length
     ? petitions.map((petition) => ({
         id: petition.id,
         petition,
@@ -179,8 +182,6 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
               awareness: detailForMission?.awareness ?? mission.stats.awareness,
             };
 
-            const petitionSource = 'petition' in mission ? mission.petition : null;
-
             return (
               <TouchableOpacity
                 key={mission.id}
@@ -228,11 +229,11 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
                   activeOpacity={0.9}
                   style={[styles.actionButton, isNight ? styles.actionButtonNight : styles.actionButtonDay]}
                   onPress={() => {
-                    if (petitionSource) {
-                      handleGoStreet(petitionSource);
+                    if (mission.petition) {
+                      handleGoStreet(mission.petition);
                     }
                   }}
-                  disabled={!petitionSource}
+                  disabled={!mission.petition}
                 >
                   <Text style={styles.actionButtonText}>저잣거리 나가기</Text>
                 </TouchableOpacity>
