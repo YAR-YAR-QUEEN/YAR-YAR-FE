@@ -10,6 +10,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import Svg, { Path } from 'react-native-svg';
 import { useDayNight } from '../contexts/DayNightContext';
+import { AuthorityGauge } from '../components/AuthorityGauge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -106,28 +107,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
         style={[
           styles.gaugeContainer,
           isNight ? styles.gaugeContainerNight : styles.gaugeContainerDay,
-        ]}
-      >
-        <View style={styles.gaugeHeader}>
-          <ScaleIcon color={isNight ? '#93c5fd' : '#78350f'} />
-          <Text
-            style={[
-              styles.gaugeTitle,
-              isNight ? styles.gaugeTitleNight : styles.gaugeTitleDay,
-            ]}
-          >
-            현재 권위 상태
-          </Text>
-        </View>
-        {/* Simple Gauge */}
-        <View style={styles.gaugeLabelRow}>
-          <Text style={isNight ? styles.gaugeLabelNight : styles.gaugeLabelDay}>대원군</Text>
-          <Text style={isNight ? styles.gaugeValueNight : styles.gaugeValueDay}>65%</Text>
-          <Text style={isNight ? styles.gaugeLabelNight : styles.gaugeLabelDay}>개화파</Text>
-        </View>
-        <View style={[styles.gaugeTrack, isNight ? styles.gaugeTrackNight : styles.gaugeTrackDay]}>
-          <View style={[styles.gaugeFill, { width: '65%' }]} />
-        </View>
+        ]}>
+        <AuthorityGauge value={30}/>
       </View>
     </View>
   );
