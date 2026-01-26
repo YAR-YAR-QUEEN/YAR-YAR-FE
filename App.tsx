@@ -7,6 +7,7 @@ import { HomePage } from './src/pages/HomePage';
 import { FactionPage } from './src/pages/FactionPage';
 import { MarketPage } from './src/pages/MarketPage';
 import { ProfilePage } from './src/pages/ProfilePage';
+import { LoginPage } from './src/pages/LoginPage';
 
 // Route 타입 정의
 type RouteType = '/' | '/faction' | '/market' | '/profile' | '/login' | '/signup' | '/reaction' | '/filming' | '/petition';
@@ -16,7 +17,7 @@ export default function App() {
   const [isNight, setIsNight] = useState(false);
   
   // 현재 라우트
-  const [currentRoute, setCurrentRoute] = useState<RouteType>('/');
+  const [currentRoute, setCurrentRoute] = useState<RouteType>('/login');
 
   // 낮/밤 토글 함수
   const toggleTime = () => {
@@ -77,6 +78,9 @@ export default function App() {
             )}
             {currentRoute === '/reaction' && (
               <PlaceholderPage title="백성 반응 페이지" isNight={isNight} />
+            )}
+            {currentRoute === '/login' && (
+              <LoginPage onNavigate={handleNavigate} />
             )}
           </View>
 
