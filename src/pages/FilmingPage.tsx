@@ -118,14 +118,16 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
 
   return (
     <View style={styles.container}>
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive
-        video
-        audio
-      />
+        {!isComplete && (
+            <Camera
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive
+            video
+            audio
+            />
+        )}
 
       <View style={[styles.topBar, { top: insets.top + 12 }]}>
         <TouchableOpacity
