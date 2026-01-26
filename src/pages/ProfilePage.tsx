@@ -1,10 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-
-interface ProfilePageProps {
-  isNight: boolean;
-}
+import { useDayNight } from '../contexts/DayNightContext';
 
 const STATS = [
   { label: '도파민', value: '1.5k', color: '#ef4444' },
@@ -14,7 +11,9 @@ const STATS = [
 
 const GRID_ITEMS = Array.from({ length: 9 }, (_, idx) => idx + 1);
 
-export function ProfilePage({ isNight }: ProfilePageProps) {
+export function ProfilePage() {
+  const { isNight } = useDayNight();
+
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

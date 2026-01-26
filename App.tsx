@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { DayNightProvider, useDayNight } from './src/contexts/DayNightContext';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
@@ -31,17 +32,12 @@ type RouteType =
   | '/inventory'
   | '/analysis';
 
-export default function App() {
+function AppContent() {
   // 낮/밤 상태
-  const [isNight, setIsNight] = useState(false);
+  const { isNight } = useDayNight();
   
   // 현재 라우트
   const [currentRoute, setCurrentRoute] = useState<RouteType>('/login');
-
-  // 낮/밤 토글 함수
-  const toggleTime = () => {
-    setIsNight((prev) => !prev);
-  };
 
   // 네비게이션 핸들러
   const handleNavigate = (route: string) => {
@@ -57,100 +53,77 @@ export default function App() {
   const showNav = !hideNavRoutes.includes(currentRoute);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView
-        style={[
-          styles.safeArea,
-          isNight ? styles.safeAreaNight : styles.safeAreaDay,
-        ]}
-        edges={['top']}
-      >
-        <StatusBar
-          barStyle={isNight ? 'light-content' : 'dark-content'}
-          backgroundColor={isNight ? '#020617' : '#fffbeb'}
-        />
-        
-        <View style={styles.appContainer}>
-          {/* 상단 헤더 */}
-          {showHeader && <TimeHeader isNight={isNight} />}
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        isNight ? styles.safeAreaNight : styles.safeAreaDay,
+      ]}
+      edges={['top']}
+    >
+      <StatusBar
+        barStyle={isNight ? 'light-content' : 'dark-content'}
+        backgroundColor={isNight ? '#020617' : '#fffbeb'}
+      />
+      
+      <View style={styles.appContainer}>
+        {/* 상단 헤더 */}
+        {showHeader && <TimeHeader />}
 
-          {/* 메인 컨텐츠 영역 */}
-          <View style={styles.mainContent}>
-            {currentRoute === '/' && (
-              <HomePage 
-                isNight={isNight} 
-                onToggleTime={toggleTime}
-                onNavigate={handleNavigate} 
-              />
-            )}
-            {currentRoute === '/faction' && (
-              <FactionPage isNight={isNight} />
-            )}
-            {currentRoute === '/market' && (
-              <MarketPage isNight={isNight} />
-            )}
-            {currentRoute === '/profile' && (
-              <ProfilePage isNight={isNight} />
-            )}
-            {currentRoute === '/petition' && (
-              <PetitionPage isNight={isNight} onNavigate={handleNavigate} />
-            )}
-            {currentRoute === '/reaction' && (
-              <ReactionPage onNavigate={handleNavigate} />
-            )}
-            {currentRoute === '/login' && (
-              <LoginPage onNavigate={handleNavigate} />
-            )}
-            {currentRoute === '/signup' && (
-              <SignupPage onNavigate={handleNavigate} />
-            )}
-            {currentRoute === '/street' && (
-              <StreetPage onNavigate={handleNavigate}/>
-            )}
-            {currentRoute === '/inventory' && (
-              <InventoryPage onNavigate={handleNavigate}/>
-            )}
-            {currentRoute === '/filming' && (
-              <FilmingPage onNavigate={handleNavigate} />
-            )}
-            {currentRoute === '/analysis' && (
-              <AnalysisPage onNavigate={handleNavigate} />
-            )}
-          </View>
-
-          {/* 하단 네비게이션 바 */}
-          {showNav && (
-            <BottomNav
-              isNight={isNight}
-              currentRoute={currentRoute as '/' | '/faction' | '/market' | '/profile'}
-              onNavigate={handleNavigate}
+        {/* 메인 컨텐츠 영역 */}
+        <View style={styles.mainContent}>
+          {currentRoute === '/' && (
+            <HomePage onNavigate={handleNavigate} 
             />
           )}
+          {currentRoute === '/faction' && <FactionPage />}
+          {currentRoute === '/market' && <MarketPage />}
+          {currentRoute === '/profile' && <ProfilePage />}
+          {currentRoute === '/petition' && (
+            <PetitionPage onNavigate={handleNavigate} />
+          )}
+          {currentRoute === '/reaction' && (
+            <ReactionPage onNavigate={handleNavigate} />
+          )}
+          {currentRoute === '/login' && (
+            <LoginPage onNavigate={handleNavigate} />
+          )}
+          {currentRoute === '/signup' && (
+            <SignupPage onNavigate={handleNavigate} />
+          )}
+          {currentRoute === '/street' && (
+            <StreetPage onNavigate={handleNavigate}/>
+          )}
+          {currentRoute === '/inventory' && (
+            <InventoryPage onNavigate={handleNavigate}/>
+          )}
+          {currentRoute === '/filming' && (
+            <FilmingPage onNavigate={handleNavigate} />
+          )}
+          {currentRoute === '/analysis' && (
+            <AnalysisPage onNavigate={handleNavigate} />
+          )}
         </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
+
+        {/* 하단 네비게이션 바 */}
+        {showNav && (
+          <BottomNav
+            currentRoute={currentRoute as '/' | '/faction' | '/market' | '/profile'}
+            onNavigate={handleNavigate}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
-// 임시 플레이스홀더 페이지 컴포넌트
-function PlaceholderPage({ title, isNight }: { title: string; isNight: boolean }) {
+export default function App() {
   return (
-    <View
-      style={[
-        styles.placeholderPage,
-        isNight ? styles.placeholderNight : styles.placeholderDay,
-      ]}
-    >
-      <Text
-        style={[
-          styles.placeholderText,
-          isNight ? styles.textNight : styles.textDay,
-        ]}
-      >
-        {title}
-      </Text>
-    </View>
-  );
+    <SafeAreaProvider>
+      <DayNightProvider>
+        <AppContent />
+      </DayNightProvider>
+    </SafeAreaProvider>
+  )
 }
 
 const styles = StyleSheet.create({

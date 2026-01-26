@@ -1,10 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-
-interface MarketPageProps {
-  isNight: boolean;
-}
+import { useDayNight } from '../contexts/DayNightContext';
 
 const ITEMS = [
   { name: '5G 봉수대', price: '500냥', icon: '📡', desc: '인지도 +5' },
@@ -12,7 +9,9 @@ const ITEMS = [
   { name: '서양식 선글라스', price: '300냥', icon: '🕶️', desc: '화제성 +3' },
 ];
 
-export function MarketPage({ isNight }: MarketPageProps) {
+export function MarketPage() {
+  const { isNight } = useDayNight();
+
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

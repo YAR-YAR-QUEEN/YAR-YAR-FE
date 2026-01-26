@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { useDayNight } from '../contexts/DayNightContext';
 
 interface PetitionPageProps {
-  isNight: boolean;
   onNavigate?: (route: string) => void;
 }
 
@@ -48,8 +48,10 @@ const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; text: string }> = {
   하: { bg: '#dcfce7', text: '#16a34a' },
 };
 
-export function PetitionPage({ isNight, onNavigate }: PetitionPageProps) {
-  return (
+export function PetitionPage({ onNavigate }: PetitionPageProps) {
+    const { isNight } = useDayNight();
+
+    return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>

@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
+import { useDayNight } from '../contexts/DayNightContext';
 
 type RouteType = '/' | '/faction' | '/market' | '/profile';
 
 interface BottomNavProps {
-  isNight: boolean;
   currentRoute: RouteType;
   onNavigate: (route: RouteType) => void;
 }
@@ -17,8 +17,9 @@ interface TabItem {
   iconName: string;
 }
 
-export function BottomNav({ isNight, currentRoute, onNavigate }: BottomNavProps) {
+export function BottomNav({ currentRoute, onNavigate }: BottomNavProps) {
   const insets = useSafeAreaInsets();
+  const { isNight } = useDayNight();
   const tabs: TabItem[] = [
     { id: '/faction', label: '정책', iconName: 'sliders' },
     { id: '/', label: '피드', iconName: 'home' },
