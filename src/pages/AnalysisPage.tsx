@@ -1,7 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useReels } from '../contexts/ReelsContext';
+import { useGameState } from '../contexts/GameStateContext';
+import { createPetitionFromReels } from '../services/petitionService';
 
 interface AnalysisPageProps {
   onNavigate?: (route: string) => void;
@@ -53,6 +62,9 @@ const buildHighlights = (breakdown?: {
 
 export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
   const { analysisResult } = useReels();
+  const { gameState, refresh } = useGameState();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const scores = analysisResult?.analysis?.scores;
   const dopamine = scores?.dopamine_score ?? FALLBACK.dopamine;
   const buzz = scores?.virality_score ?? FALLBACK.buzz;
@@ -62,6 +74,27 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
   const comment = analysisResult?.analysis?.comment ?? FALLBACK.comment;
   const highlights = buildHighlights(analysisResult?.analysis?.breakdown);
   const rating = Math.floor(totalScore / 2);
+  const reelsId = analysisResult?.reelsId;
+
+  const handleCreatePetition = async () => {
+    if (!reelsId || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+    try {
+      await createPetitionFromReels({
+        reelsId,
+        dayCount: gameState?.dayCount ?? 1,
+      });
+      refresh();
+    } catch (error) {
+      setSubmitError('상소문 작성에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={[styles.container, styles.containerDay]}>
@@ -120,6 +153,29 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
             </View>
           ))}
         </View>
+
+        {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[
+            styles.ctaButton,
+            styles.ctaButtonDay,
+            styles.ctaButtonSpacing,
+            isSubmitting && styles.ctaButtonDisabled,
+          ]}
+          onPress={handleCreatePetition}
+          disabled={!reelsId || isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Feather name="file-text" size={18} color="#fff" />
+              <Text style={styles.ctaText}>상소문 작성하기</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.9}
@@ -295,13 +351,25 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
   },
+  ctaButtonDisabled: {
+    opacity: 0.6,
+  },
   ctaButtonDay: {
     backgroundColor: '#f59e0b',
+  },
+  ctaButtonSpacing: {
+    marginBottom: 10,
   },
   ctaText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#b91c1c',
+    fontSize: 12,
+    marginBottom: 10,
   },
   bodyDay: {
     color: 'rgba(120, 53, 15, 0.8)',

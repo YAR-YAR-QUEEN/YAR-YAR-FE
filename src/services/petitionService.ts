@@ -4,6 +4,7 @@ import type {
   PetitionDetailResponseDto,
   PetitionListItemDto,
   PetitionListItemResponseDto,
+  PetitionDto,
 } from '../types/dto';
 
 export const fetchPetitionDetail = async (
@@ -41,4 +42,18 @@ export const fetchPetitions = async (
     awareness: item.awareness,
     createdAt: item.createdAt,
   }));
+};
+
+export const createPetitionFromReels = async (params: {
+  reelsId: number;
+  dayCount: number;
+}): Promise<PetitionDto> => {
+  const response = await http.post<PetitionDto>(
+    `/reels/${params.reelsId}/petitions`,
+    null,
+    {
+      params: { dayCount: params.dayCount },
+    }
+  );
+  return response.data;
 };
