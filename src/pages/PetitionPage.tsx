@@ -1,8 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { useGameState } from '../contexts/GameStateContext';
+import { fetchPetitionDetail, fetchPetitions } from '../services/petitionService';
+import type { PetitionDetailDto, PetitionListItemDto } from '../types/dto';
 
 interface PetitionPageProps {
   onNavigate?: (route: string) => void;
@@ -10,7 +19,7 @@ interface PetitionPageProps {
 
 type Difficulty = '상' | '중' | '하';
 
-const MISSIONS: Array<{
+const FALLBACK_MISSIONS: Array<{
   id: number;
   title: string;
   content: string;
@@ -49,9 +58,68 @@ const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; text: string }> = {
   하: { bg: '#dcfce7', text: '#16a34a' },
 };
 
+const getDifficulty = (petition: PetitionListItemDto): Difficulty => {
+  const score = petition.dopamine + petition.buzz + petition.awareness;
+  if (score >= 120) {
+    return '상';
+  }
+  if (score >= 80) {
+    return '중';
+  }
+  return '하';
+};
+
 export function PetitionPage({ onNavigate }: PetitionPageProps) {
   const { isNight } = useDayNight();
   const { gameState } = useGameState();
+  const [petitions, setPetitions] = useState<PetitionListItemDto[]>([]);
+  const [detail, setDetail] = useState<PetitionDetailDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    const dayCount = gameState?.dayCount ?? 1;
+    setLoading(true);
+    setLoadFailed(false);
+    fetchPetitions(dayCount)
+      .then((data) => {
+        setPetitions(data);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        setPetitions([]);
+        setLoadFailed(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [gameState?.dayCount]);
+
+  const handleSelect = (petitionId: number) => {
+    fetchPetitionDetail(petitionId)
+      .then((data) => {
+        setDetail(data);
+      })
+      .catch(() => {
+        setDetail(null);
+      });
+  };
+
+  const missions = petitions.length
+    ? petitions.map((petition) => ({
+        id: petition.id,
+        title: petition.type === 'POSITIVE' ? '기쁜 소식' : '어두운 소식',
+        content: petition.description,
+        stats: {
+          dopamine: petition.dopamine,
+          buzz: petition.buzz,
+          awareness: petition.awareness,
+        },
+        difficulty: getDifficulty(petition),
+      }))
+    : loadFailed
+      ? FALLBACK_MISSIONS
+      : [];
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -77,11 +145,37 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
         </View>
 
         <View style={styles.list}>
-          {MISSIONS.map((mission) => {
+          {loading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={isNight ? '#60a5fa' : '#f59e0b'} />
+              <Text style={[styles.loadingText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                상소문을 불러오는 중...
+              </Text>
+            </View>
+          ) : null}
+
+          {!loading && missions.length === 0 ? (
+            <Text style={[styles.emptyText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+              상소문이 없습니다.
+            </Text>
+          ) : null}
+
+          {missions.map((mission) => {
             const tone = DIFFICULTY_COLORS[mission.difficulty];
+            const detailForMission =
+              detail && detail.id === mission.id ? detail : null;
+            const displayContent = detailForMission?.description ?? mission.content;
+            const displayStats = {
+              dopamine: detailForMission?.dopamine ?? mission.stats.dopamine,
+              buzz: detailForMission?.buzz ?? mission.stats.buzz,
+              awareness: detailForMission?.awareness ?? mission.stats.awareness,
+            };
+
             return (
-              <View
+              <TouchableOpacity
                 key={mission.id}
+                activeOpacity={0.9}
+                onPress={() => handleSelect(mission.id)}
                 style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}
               >
                 <View style={styles.cardHeader}>
@@ -96,38 +190,34 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
                 </View>
 
                 <Text style={[styles.cardBody, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                  {mission.content}
+                  {displayContent}
                 </Text>
 
                 <View style={styles.statsRow}>
                   <View style={styles.statItem}>
                     <Feather name="activity" size={12} color="#ef4444" />
                     <Text style={[styles.statText, { color: '#ef4444' }]}>
-                      +{mission.stats.dopamine}
+                      +{displayStats.dopamine}
                     </Text>
                   </View>
                   <View style={styles.statItem}>
                     <Feather name="zap" size={12} color="#eab308" />
                     <Text style={[styles.statText, { color: '#eab308' }]}>
-                      +{mission.stats.buzz}
+                      +{displayStats.buzz}
                     </Text>
                   </View>
                   <View style={styles.statItem}>
                     <Feather name="users" size={12} color="#3b82f6" />
                     <Text style={[styles.statText, { color: '#3b82f6' }]}>
-                      +{mission.stats.awareness}
+                      +{displayStats.awareness}
                     </Text>
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  style={[styles.actionButton, isNight ? styles.actionButtonNight : styles.actionButtonDay]}
-                  onPress={() => onNavigate?.('/street')}
-                >
+                <View style={[styles.actionButton, isNight ? styles.actionButtonNight : styles.actionButtonDay]}>
                   <Text style={styles.actionButtonText}>저잣거리 나가기</Text>
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -199,6 +289,19 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+  },
+  loadingWrap: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 12,
+  },
+  emptyText: {
+    fontSize: 12,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   card: {
     borderRadius: 16,

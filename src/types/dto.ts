@@ -82,6 +82,46 @@ export interface PetitionDto {
   };
 }
 
+export interface PetitionDetailDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionDetailResponseDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionListItemDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionListItemResponseDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
 export interface ReelsUploadRequestDto {
 	videoUrl: string;
 	durationSec: number;
