@@ -1,13 +1,10 @@
 import { http } from "./http";
+import type { LoginRequestDto, SignupRequestDto, UserDto } from "../types/dto";
 
-export const signup = (payload: {
-  nickname: string;
-  email: string;
-  password: string;
-}) => {
-  return http.post("/auth/signup", payload);
+export const signup = (payload: SignupRequestDto) => {
+  return http.post<UserDto>("/auth/signup", payload);
 };
 
-export const login = (payload: { email: string; password: string }) => {
-  return http.post("/auth/login", payload);
+export const login = (payload: LoginRequestDto) => {
+  return http.post<UserDto>("/auth/login", payload);
 };
