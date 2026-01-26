@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DayNightProvider, useDayNight } from './src/contexts/DayNightContext';
@@ -16,6 +16,7 @@ import { InventoryPage } from './src/pages/InventoryPage';
 import { FilmingPage } from './src/pages/FilmingPage';
 import { AnalysisPage } from './src/pages/AnalysisPage';
 import { ReactionPage } from './src/pages/ReactionPage';
+import { http } from "./src/services/http";
 
 // Route 타입 정의
 type RouteType =
