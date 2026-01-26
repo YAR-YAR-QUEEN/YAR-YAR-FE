@@ -2,15 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
+import { useDayNight } from '../contexts/DayNightContext';
 
-interface TimeHeaderProps {
-  isNight: boolean;
-}
-
-export function TimeHeader({ isNight }: TimeHeaderProps) {
-  const currentTime = isNight 
-    ? { name: '자시', emoji: '🌙', description: '깊은 밤' }
-    : { name: '진시', emoji: '🌅', description: '아침 조회 시간' };
+export function TimeHeader() {
+  const { isNight, currentTime } = useDayNight();
 
   return (
     <View

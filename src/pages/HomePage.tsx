@@ -9,16 +9,17 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import Svg, { Path } from 'react-native-svg';
+import { useDayNight } from '../contexts/DayNightContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface HomePageProps {
-  isNight: boolean;
-  onToggleTime: () => void;
   onNavigate: (route: string) => void;
 }
 
-export function HomePage({ isNight, onToggleTime, onNavigate }: HomePageProps) {
+export function HomePage({ onNavigate }: HomePageProps) {
+  const { isNight, toggleTime } = useDayNight();
+  
   return (
     <View
       style={[
@@ -28,7 +29,7 @@ export function HomePage({ isNight, onToggleTime, onNavigate }: HomePageProps) {
     >
       {/* Day/Night Toggle Button */}
       <TouchableOpacity
-        onPress={onToggleTime}
+        onPress={toggleTime}
         style={[
           styles.toggleButton,
           isNight ? styles.toggleButtonNight : styles.toggleButtonDay,

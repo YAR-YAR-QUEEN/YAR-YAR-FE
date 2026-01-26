@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { useDayNight } from '../contexts/DayNightContext';
 
-interface FactionPageProps {
-  isNight: boolean;
-}
-
-export function FactionPage({ isNight }: FactionPageProps) {
+export function FactionPage() {
+  const { isNight } = useDayNight();
+  
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
