@@ -8,6 +8,7 @@ import { FactionPage } from './src/pages/FactionPage';
 import { MarketPage } from './src/pages/MarketPage';
 import { ProfilePage } from './src/pages/ProfilePage';
 import { LoginPage } from './src/pages/LoginPage';
+import { SignupPage } from './src/pages/SignupPage';
 
 // Route 타입 정의
 type RouteType = '/' | '/faction' | '/market' | '/profile' | '/login' | '/signup' | '/reaction' | '/filming' | '/petition';
@@ -81,6 +82,9 @@ export default function App() {
             )}
             {currentRoute === '/login' && (
               <LoginPage onNavigate={handleNavigate} />
+            )}
+            {currentRoute === '/signup' && (
+              <SignupPage onNavigate={handleNavigate} />
             )}
           </View>
 
