@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
+import { AuthorityGauge } from '../components/AuthorityGauge';
 
 export function FactionPage() {
   const { isNight } = useDayNight();
@@ -17,7 +18,7 @@ export function FactionPage() {
         </View>
 
         <View style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}>
-          <AuthorityGauge value={55} isNight={isNight} />
+          <AuthorityGauge value={30} />
         </View>
 
         <View style={styles.section}>
@@ -92,28 +93,6 @@ export function FactionPage() {
           </Text>
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function AuthorityGauge({ value, isNight }: { value: number; isNight: boolean }) {
-  const clamped = Math.max(0, Math.min(100, value));
-  return (
-    <View>
-      <View style={styles.gaugeHeader}>
-        <Feather name="activity" size={16} color={isNight ? '#93c5fd' : '#78350f'} />
-        <Text style={[styles.gaugeTitle, isNight ? styles.textMainNight : styles.textMainDay]}>
-          현재 권위 상태
-        </Text>
-      </View>
-      <View style={styles.gaugeRow}>
-        <Text style={[styles.gaugeLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>대원군</Text>
-        <Text style={[styles.gaugeValue, isNight ? styles.textMainNight : styles.textMainDay]}>{clamped}%</Text>
-        <Text style={[styles.gaugeLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>황후</Text>
-      </View>
-      <View style={[styles.gaugeTrack, isNight ? styles.gaugeTrackNight : styles.gaugeTrackDay]}>
-        <View style={[styles.gaugeFill, { width: `${clamped}%` }]} />
-      </View>
     </View>
   );
 }
