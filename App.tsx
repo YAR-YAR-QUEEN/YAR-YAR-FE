@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DayNightProvider, useDayNight } from './src/contexts/DayNightContext';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { GameStateProvider } from './src/contexts/GameStateContext';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
@@ -120,9 +122,13 @@ function AppContent() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <DayNightProvider>
-        <AppContent />
-      </DayNightProvider>
+      <AuthProvider>
+        <GameStateProvider>
+          <DayNightProvider>
+            <AppContent />
+          </DayNightProvider>
+        </GameStateProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   )
 }

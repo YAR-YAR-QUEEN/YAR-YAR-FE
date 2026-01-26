@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
+import { useGameState } from '../contexts/GameStateContext';
 
 interface PetitionPageProps {
   onNavigate?: (route: string) => void;
@@ -49,9 +50,10 @@ const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; text: string }> = {
 };
 
 export function PetitionPage({ onNavigate }: PetitionPageProps) {
-    const { isNight } = useDayNight();
+  const { isNight } = useDayNight();
+  const { gameState } = useGameState();
 
-    return (
+  return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
@@ -65,6 +67,13 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
           <Text style={[styles.title, isNight ? styles.titleNight : styles.titleDay]}>
             📜 오늘의 상소문
           </Text>
+          {gameState ? (
+            <View style={[styles.dayBadge, isNight ? styles.dayBadgeNight : styles.dayBadgeDay]}>
+              <Text style={[styles.dayBadgeText, isNight ? styles.dayBadgeTextNight : styles.dayBadgeTextDay]}>
+                D{gameState.dayCount} · {gameState.phase}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.list}>
@@ -165,6 +174,28 @@ const styles = StyleSheet.create({
   },
   titleNight: {
     color: '#f8fafc',
+  },
+  dayBadge: {
+    marginLeft: 'auto',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  dayBadgeDay: {
+    backgroundColor: '#fef3c7',
+  },
+  dayBadgeNight: {
+    backgroundColor: '#1e293b',
+  },
+  dayBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  dayBadgeTextDay: {
+    color: '#92400e',
+  },
+  dayBadgeTextNight: {
+    color: '#e2e8f0',
   },
   list: {
     gap: 12,

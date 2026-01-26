@@ -3,9 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { AuthorityGauge } from '../components/AuthorityGauge';
+import { useGameState } from '../contexts/GameStateContext';
 
 export function FactionPage() {
   const { isNight } = useDayNight();
+  const { gameState } = useGameState();
+  const winRate = Math.round(gameState?.winRate ?? 55);
+  const opponentRate = Math.max(0, 100 - winRate);
   
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -18,7 +22,7 @@ export function FactionPage() {
         </View>
 
         <View style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}>
-          <AuthorityGauge value={30} />
+          <AuthorityGauge value={gameState?.authority ?? 30} />
         </View>
 
         <View style={styles.section}>
@@ -30,23 +34,17 @@ export function FactionPage() {
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
                 대원군
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>45%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>{opponentRate}%</Text>
             </View>
             <Text style={[styles.vsText, isNight ? styles.textMutedNight : styles.textMutedDay]}>VS</Text>
             <View style={styles.predictionCell}>
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
                 황후
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueHot]}>55%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueHot]}>{winRate}%</Text>
             </View>
           </View>
 
-          <View style={[styles.infoBox, isNight ? styles.infoBoxNight : styles.infoBoxDay]}>
-            <Feather name="trending-up" size={14} color={isNight ? '#bfdbfe' : '#1d4ed8'} />
-            <Text style={[styles.infoText, isNight ? styles.infoTextNight : styles.infoTextDay]}>
-              AI 분석: 어제 올린 '고양이 챌린지'가 화제성 지표를 견인했습니다.
-            </Text>
-          </View>
         </View>
 
         <View style={styles.section}>
@@ -89,7 +87,7 @@ export function FactionPage() {
             <Text style={styles.mainButtonText}>싸움 붙이기</Text>
           </TouchableOpacity>
           <Text style={[styles.mainActionHint, isNight ? styles.hintNight : styles.hintDay]}>
-            현재 승률 55%로 즉시 결과를 확인합니다
+            현재 승률 {winRate}로 즉시 결과를 확인합니다
           </Text>
         </View>
       </ScrollView>

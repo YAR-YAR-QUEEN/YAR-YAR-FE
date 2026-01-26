@@ -2,17 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
-
-const STATS = [
-  { label: '도파민', value: '1.5k', color: '#ef4444' },
-  { label: '화제성', value: '892', color: '#eab308' },
-  { label: '인지도', value: '3.2k', color: '#3b82f6' },
-];
+import { useGameState } from '../contexts/GameStateContext';
 
 const GRID_ITEMS = Array.from({ length: 9 }, (_, idx) => idx + 1);
 
 export function ProfilePage() {
   const { isNight } = useDayNight();
+  const { gameState } = useGameState();
+
+  const stats = [
+    { label: '도파민', value: gameState?.dopamine ?? 0, color: '#ef4444' },
+    { label: '화제성', value: gameState?.buzz ?? 0, color: '#eab308' },
+    { label: '인지도', value: gameState?.awareness ?? 0, color: '#3b82f6' },
+  ];
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -29,12 +31,9 @@ export function ProfilePage() {
           <Text style={[styles.name, isNight ? styles.nameNight : styles.nameDay]}>
             황후
           </Text>
-          <Text style={[styles.subTitle, isNight ? styles.subTitleNight : styles.subTitleDay]}>
-            Lv. 24 힙한 통치자
-          </Text>
 
           <View style={styles.statsGrid}>
-            {STATS.map((stat) => (
+            {stats.map((stat) => (
               <View
                 key={stat.label}
                 style={[styles.statCard, isNight ? styles.statCardNight : styles.statCardDay]}
@@ -118,16 +117,6 @@ const styles = StyleSheet.create({
   },
   nameNight: {
     color: '#f8fafc',
-  },
-  subTitle: {
-    fontSize: 13,
-    marginBottom: 16,
-  },
-  subTitleDay: {
-    color: '#92400e',
-  },
-  subTitleNight: {
-    color: '#94a3b8',
   },
   statsGrid: {
     flexDirection: 'row',

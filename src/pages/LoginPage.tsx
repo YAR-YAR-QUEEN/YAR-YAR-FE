@@ -10,12 +10,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { login } from '../services/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
   onNavigate?: (route: string) => void;
 }
 
 export function LoginPage({ onNavigate }: LoginPageProps) {
+  const { setUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -35,7 +37,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setLoading(true);
 
     try {
-      await login({ email: email.trim(), password });
+      const response = await login({ email: email.trim(), password });
+      setUser(response.data);
       Alert.alert('로그인 완료', '환영합니다!');
       onNavigate?.('/');
     } catch (error: any) {

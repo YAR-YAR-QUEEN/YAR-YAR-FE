@@ -43,6 +43,26 @@ export interface GameStateDto {
 	minsim: number;
 	authority: number;
 	daewongunPower: number;
+	winRate: number;
+	awareness: number;
+	buzz: number;
+	dopamine: number;
+	reelsScore: number;
+}
+
+export interface GameStateResponseDto {
+	dayCount: number;
+	phase: Phase;
+	
+	minsim: number;
+	authority: number;
+	daewongunPower: number;
+	winRate: number;
+	awareness?: number;
+	awarenesss?: number;
+	buzz: number;
+	dopamine: number;
+	reelsScore: number;
 }
 
 export interface PetitionDto {

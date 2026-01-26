@@ -11,6 +11,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import Svg, { Path } from 'react-native-svg';
 import { useDayNight } from '../contexts/DayNightContext';
 import { AuthorityGauge } from '../components/AuthorityGauge';
+import { useGameState } from '../contexts/GameStateContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ interface HomePageProps {
 
 export function HomePage({ onNavigate }: HomePageProps) {
   const { isNight, toggleDebugTime } = useDayNight();
+  const { gameState } = useGameState();
   
   return (
     <View
@@ -104,7 +106,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           styles.gaugeContainer,
           isNight ? styles.gaugeContainerNight : styles.gaugeContainerDay,
         ]}>
-        <AuthorityGauge value={30}/>
+        <AuthorityGauge value={gameState?.authority ?? 30}/>
       </View>
     </View>
   );
