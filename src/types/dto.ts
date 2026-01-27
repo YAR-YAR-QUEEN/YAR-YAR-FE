@@ -170,6 +170,50 @@ export interface ReelsDto {
 	reelsScore: number;
 }
 
+export interface ReelsListItemDto {
+	id: number;
+	videoUrl: string;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createdAt: string;
+}
+
+export interface ReelsListItemResponseDto {
+	id: number;
+	videoUrl: string;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createAt: string;
+}
+
+export interface ReelsDetailDto {
+	id: number;
+	videoUrl: string;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createdAt: string;
+}
+
+export interface ReelsDetailResponseDto {
+	id: number;
+	videoUrl: string;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createAt: string;
+}
+
 export interface MinsimLogDto {
 	id: number;
 	amount: number;

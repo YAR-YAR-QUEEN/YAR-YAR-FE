@@ -1,20 +1,79 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Modal,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import Video from 'react-native-video';
 import { useDayNight } from '../contexts/DayNightContext';
 import { useGameState } from '../contexts/GameStateContext';
-
-const GRID_ITEMS = Array.from({ length: 9 }, (_, idx) => idx + 1);
+import { useAuth } from '../contexts/AuthContext';
+import { fetchReelsList } from '../services/reelsListService';
+import { fetchReelsDetail } from '../services/reelsDetailService';
+import type { ReelsListItemDto, ReelsDetailDto } from '../types/dto';
 
 export function ProfilePage() {
   const { isNight } = useDayNight();
   const { gameState } = useGameState();
+  const { user } = useAuth();
+  const [reels, setReels] = useState<ReelsListItemDto[]>([]);
+  const [reelsLoading, setReelsLoading] = useState(false);
+  const [reelsFailed, setReelsFailed] = useState(false);
+  const [selectedReel, setSelectedReel] = useState<ReelsDetailDto | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
 
   const stats = [
     { label: '도파민', value: gameState?.dopamine ?? 0, color: '#ef4444' },
-    { label: '화제성', value: gameState?.buzz ?? 0, color: '#eab308' },
-    { label: '인지도', value: gameState?.awareness ?? 0, color: '#3b82f6' },
+    { label: '버즈', value: gameState?.buzz ?? 0, color: '#eab308' },
+    { label: '인지', value: gameState?.awareness ?? 0, color: '#3b82f6' },
   ];
+
+  useEffect(() => {
+    if (!user?.id) {
+      setReels([]);
+      return;
+    }
+
+    setReelsLoading(true);
+    setReelsFailed(false);
+    fetchReelsList(user.id)
+      .then((data) => {
+        setReels(data);
+        setReelsFailed(false);
+      })
+      .catch(() => {
+        setReels([]);
+        setReelsFailed(true);
+      })
+      .finally(() => {
+        setReelsLoading(false);
+      });
+  }, [user?.id]);
+
+  const handleOpenReel = async (reelId: number) => {
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const detail = await fetchReelsDetail(reelId);
+      setSelectedReel(detail);
+    } catch (error) {
+      setDetailError('릴스를 불러오지 못했어요.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedReel(null);
+    setDetailError('');
+  };
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -29,7 +88,7 @@ export function ProfilePage() {
             </View>
           </View>
           <Text style={[styles.name, isNight ? styles.nameNight : styles.nameDay]}>
-            황후
+            왕후
           </Text>
 
           <View style={styles.statsGrid}>
@@ -53,18 +112,84 @@ export function ProfilePage() {
           </View>
         </View>
 
-        <View style={styles.grid}>
-          {GRID_ITEMS.map((item) => (
-            <View
-              key={item}
-              style={[styles.gridItem, isNight ? styles.gridItemNight : styles.gridItemDay]}
+        {reelsLoading ? (
+          <Text style={[styles.reelsInfo, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+            릴스를 불러오는 중...
+          </Text>
+        ) : null}
+
+        {!reelsLoading && reels.length === 0 ? (
+          <Text style={[styles.reelsInfo, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+            {reelsFailed ? '릴스를 불러오지 못했어요.' : '아직 릴스가 없습니다.'}
+          </Text>
+        ) : null}
+
+        <View style={styles.reelsGrid}>
+          {reels.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.85}
+              onPress={() => handleOpenReel(item.id)}
+              style={[styles.reelTile, isNight ? styles.reelTileNight : styles.reelTileDay]}
             >
-              <Text style={styles.gridEmoji}>📹</Text>
-              <Text style={styles.gridLike}>❤️ {Math.floor(Math.random() * 1000)}</Text>
-            </View>
+              <Text style={styles.reelEmoji}>🎬</Text>
+              <Text style={[styles.reelTitle, isNight ? styles.textMainNight : styles.textMainDay]}>
+                #{item.id}
+              </Text>
+              <Text style={[styles.reelMeta, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                {item.reelsScore}점
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
+
+      <Modal visible={!!selectedReel || detailLoading || !!detailError} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, isNight ? styles.modalCardNight : styles.modalCardDay]}>
+            <TouchableOpacity style={styles.modalClose} onPress={closeModal}>
+              <Feather name="x" size={18} color={isNight ? '#e2e8f0' : '#78350f'} />
+            </TouchableOpacity>
+
+            {detailLoading ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator color={isNight ? '#60a5fa' : '#f59e0b'} />
+                <Text style={[styles.modalText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  릴스를 불러오는 중...
+                </Text>
+              </View>
+            ) : null}
+
+            {!detailLoading && detailError ? (
+              <Text style={[styles.modalText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                {detailError}
+              </Text>
+            ) : null}
+
+            {!detailLoading && selectedReel ? (
+              <>
+                <Text style={[styles.modalTitle, isNight ? styles.textMainNight : styles.textMainDay]}>
+                  릴스 #{selectedReel.id}
+                </Text>
+                <View style={styles.videoWrap}>
+                  <Video
+                    source={{ uri: selectedReel.videoUrl }}
+                    style={styles.video}
+                    controls
+                    resizeMode="cover"
+                  />
+                </View>
+                <Text style={[styles.modalText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  점수 {selectedReel.reelsScore} · 도파민 {selectedReel.dopamine} · 버즈 {selectedReel.buzz}
+                </Text>
+                <Text style={[styles.modalText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  인지도 {selectedReel.awareness} · 상소문 {selectedReel.petitionId ?? '-'}
+                </Text>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -157,37 +282,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  grid: {
+  reelsInfo: {
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  reelsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: 8,
   },
-  gridItem: {
-    width: '32%',
-    aspectRatio: 3 / 4,
-    borderRadius: 10,
+  reelTile: {
+    width: '31%',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  reelTileDay: {
+    backgroundColor: '#ffffff',
+    borderColor: '#fde68a',
+  },
+  reelTileNight: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  reelEmoji: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  reelTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reelMeta: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
+    padding: 16,
   },
-  gridItemDay: {
-    backgroundColor: '#fde68a',
+  modalCard: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
   },
-  gridItemNight: {
-    backgroundColor: '#1e293b',
+  modalCardDay: {
+    backgroundColor: '#ffffff',
+    borderColor: '#fde68a',
   },
-  gridEmoji: {
-    fontSize: 20,
-    opacity: 0.25,
+  modalCardNight: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
   },
-  gridLike: {
-    position: 'absolute',
-    bottom: 6,
-    left: 6,
-    fontSize: 10,
+  modalClose: {
+    alignSelf: 'flex-end',
+    padding: 6,
+  },
+  modalTitle: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#ffffff',
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 11,
+    marginTop: 8,
+  },
+  modalLoading: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  videoWrap: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0f172a',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+  },
+  textMainDay: {
+    color: '#78350f',
+  },
+  textMainNight: {
+    color: '#e2e8f0',
   },
   textMutedDay: {
     color: 'rgba(120, 53, 15, 0.6)',
