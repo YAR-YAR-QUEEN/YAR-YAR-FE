@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
-import { fetchItems } from '../services/itemService';
-import type { ItemDto } from '../types/dto';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchItems, fetchUserItems } from '../services/itemService';
+import type { ItemDto, UserItemDto } from '../types/dto';
 
 const getItemIcon = (item: ItemDto) => {
   if (item.type === 'FILTER') return '🎞️';
@@ -29,11 +30,30 @@ const getEffectLabel = (item: ItemDto) => {
   return `효과 +${value} (${duration}s)`;
 };
 
+const formatExpireAt = (value?: string) => {
+  if (!value) return '만료 없음';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const diffMs = date.getTime() - Date.now();
+  if (diffMs <= 0) return '만료됨';
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}일 ${hours}시간 남음`;
+  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
+  return `${minutes}분 남음`;
+};
+
 export function MarketPage() {
   const { isNight } = useDayNight();
+  const { user } = useAuth();
   const [items, setItems] = useState<ItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [ownedItems, setOwnedItems] = useState<UserItemDto[]>([]);
+  const [ownedLoading, setOwnedLoading] = useState(false);
+  const [ownedFailed, setOwnedFailed] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -51,6 +71,28 @@ export function MarketPage() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setOwnedItems([]);
+      return;
+    }
+
+    setOwnedLoading(true);
+    setOwnedFailed(false);
+    fetchUserItems(user.id)
+      .then((response) => {
+        setOwnedItems(response.data);
+        setOwnedFailed(false);
+      })
+      .catch(() => {
+        setOwnedItems([]);
+        setOwnedFailed(true);
+      })
+      .finally(() => {
+        setOwnedLoading(false);
+      });
+  }, [user?.id]);
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -108,10 +150,34 @@ export function MarketPage() {
             보유 아이템
           </Text>
           <View style={[styles.ownedCard, isNight ? styles.ownedCardNight : styles.ownedCardDay]}>
-            <Text style={styles.ownedIcon}>🎒</Text>
-            <Text style={[styles.ownedText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-              아직 구매한 아이템이 없습니다.
-            </Text>
+            {ownedLoading ? (
+              <>
+                <Text style={styles.ownedIcon}>🎒</Text>
+                <Text style={[styles.ownedText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  보유 아이템을 불러오는 중...
+                </Text>
+              </>
+            ) : null}
+
+            {!ownedLoading && ownedItems.length === 0 ? (
+              <>
+                <Text style={styles.ownedIcon}>🎒</Text>
+                <Text style={[styles.ownedText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  {ownedFailed ? '보유 아이템을 불러오지 못했어요.' : '아직 구매한 아이템이 없습니다.'}
+                </Text>
+              </>
+            ) : null}
+
+            {ownedItems.map((item) => (
+              <View key={`${item.itemId}-${item.expireAt ?? 'none'}`} style={styles.ownedRow}>
+                <Text style={[styles.ownedName, isNight ? styles.textMainNight : styles.textMainDay]}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.ownedMeta, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                  {item.remainCount}개 보유 · 만료 {formatExpireAt(item.expireAt)}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -264,6 +330,20 @@ const styles = StyleSheet.create({
   },
   ownedText: {
     fontSize: 12,
+  },
+  ownedRow: {
+    width: '100%',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  ownedName: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  ownedMeta: {
+    fontSize: 10,
   },
   textMainDay: {
     color: '#78350f',
