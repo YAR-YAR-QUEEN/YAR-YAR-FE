@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useReels } from '../contexts/ReelsContext';
@@ -65,6 +68,7 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
   const { gameState, refresh } = useGameState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const scores = analysisResult?.analysis?.scores;
   const dopamine = scores?.dopamine_score ?? FALLBACK.dopamine;
   const buzz = scores?.virality_score ?? FALLBACK.buzz;
@@ -76,8 +80,13 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
   const rating = Math.floor(totalScore / 2);
   const reelsId = analysisResult?.reelsId;
 
+  useEffect(() => {
+    setIsSubmitted(false);
+    setSubmitError('');
+  }, [reelsId]);
+
   const handleCreatePetition = async () => {
-    if (!reelsId || isSubmitting) {
+    if (!reelsId || isSubmitting || isSubmitted) {
       return;
     }
 
@@ -89,6 +98,12 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
         dayCount: gameState?.dayCount ?? 1,
       });
       refresh();
+      setIsSubmitted(true);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('상소문이 작성되었습니다.', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('완료', '상소문이 작성되었습니다.');
+      }
     } catch (error) {
       setSubmitError('상소문 작성에 실패했어요. 다시 시도해주세요.');
     } finally {
@@ -162,17 +177,19 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
             styles.ctaButton,
             styles.ctaButtonDay,
             styles.ctaButtonSpacing,
-            isSubmitting && styles.ctaButtonDisabled,
+            (isSubmitting || isSubmitted) && styles.ctaButtonDisabled,
           ]}
           onPress={handleCreatePetition}
-          disabled={!reelsId || isSubmitting}
+          disabled={!reelsId || isSubmitting || isSubmitted}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
               <Feather name="file-text" size={18} color="#fff" />
-              <Text style={styles.ctaText}>상소문 작성하기</Text>
+              <Text style={styles.ctaText}>
+                {isSubmitted ? '상소문 작성 완료' : '상소문 작성하기'}
+              </Text>
             </>
           )}
         </TouchableOpacity>
