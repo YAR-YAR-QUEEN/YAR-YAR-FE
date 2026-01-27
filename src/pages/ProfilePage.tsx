@@ -31,8 +31,8 @@ export function ProfilePage() {
 
   const stats = [
     { label: '도파민', value: gameState?.dopamine ?? 0, color: '#ef4444' },
-    { label: '버즈', value: gameState?.buzz ?? 0, color: '#eab308' },
-    { label: '인지', value: gameState?.awareness ?? 0, color: '#3b82f6' },
+    { label: '화제성', value: gameState?.buzz ?? 0, color: '#eab308' },
+    { label: '인지도', value: gameState?.awareness ?? 0, color: '#3b82f6' },
   ];
 
   useEffect(() => {

@@ -59,7 +59,6 @@ export interface GameStateResponseDto {
 	daewongunPower: number;
 	winRate: number;
 	awareness?: number;
-	awarenesss?: number;
 	buzz: number;
 	dopamine: number;
 	reelsScore: number;
