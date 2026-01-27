@@ -1,16 +1,56 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
+import { fetchItems } from '../services/itemService';
+import type { ItemDto } from '../types/dto';
 
-const ITEMS = [
-  { name: '5G 봉수대', price: '500냥', icon: '📡', desc: '인지도 +5' },
-  { name: '가비(Coffee)', price: '100냥', icon: '☕', desc: '도파민 +2' },
-  { name: '서양식 선글라스', price: '300냥', icon: '🕶️', desc: '화제성 +3' },
-];
+const getItemIcon = (item: ItemDto) => {
+  if (item.type === 'FILTER') return '🎞️';
+  if (item.type === 'BUFF') return '✨';
+  return '🎁';
+};
+
+const getEffectLabel = (item: ItemDto) => {
+  const { type, value, duration } = item.effect;
+  if (type === 'REELS_MULTIPLIER') {
+    return `릴스 x${value} (${duration}s)`;
+  }
+  if (type === 'AUTHORITY_BUFF') {
+    return `권위 +${value} (${duration}s)`;
+  }
+  return `효과 +${value} (${duration}s)`;
+};
 
 export function MarketPage() {
   const { isNight } = useDayNight();
+  const [items, setItems] = useState<ItemDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setLoadFailed(false);
+    fetchItems()
+      .then((response) => {
+        setItems(response.data);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        setItems([]);
+        setLoadFailed(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -18,24 +58,39 @@ export function MarketPage() {
         <View style={styles.header}>
           <Feather name="shopping-bag" size={22} color={isNight ? '#fbbf24' : '#d97706'} />
           <Text style={[styles.headerTitle, isNight ? styles.headerTitleNight : styles.headerTitleDay]}>
-            개화파 상점
+            왕실 상점
           </Text>
         </View>
 
         <View style={styles.grid}>
-          {ITEMS.map((item) => (
+          {loading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={isNight ? '#60a5fa' : '#f59e0b'} />
+              <Text style={[styles.loadingText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+                아이템을 불러오는 중...
+              </Text>
+            </View>
+          ) : null}
+
+          {!loading && items.length === 0 ? (
+            <Text style={[styles.emptyText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
+              {loadFailed ? '아이템을 불러오지 못했어요.' : '아이템이 없습니다.'}
+            </Text>
+          ) : null}
+
+          {items.map((item) => (
             <View
-              key={item.name}
+              key={item.id}
               style={[styles.itemCard, isNight ? styles.itemCardNight : styles.itemCardDay]}
             >
-              <Text style={styles.itemIcon}>{item.icon}</Text>
+              <Text style={styles.itemIcon}>{getItemIcon(item)}</Text>
               <Text style={[styles.itemName, isNight ? styles.textMainNight : styles.textMainDay]}>
                 {item.name}
               </Text>
               <Text style={[styles.itemDesc, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                {item.desc}
+                {getEffectLabel(item)}
               </Text>
-              <Text style={styles.itemPrice}>{item.price}</Text>
+              <Text style={styles.itemPrice}>{item.priceMinsim} 민심</Text>
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.buyButton, isNight ? styles.buyButtonNight : styles.buyButtonDay]}
@@ -53,9 +108,9 @@ export function MarketPage() {
             보유 아이템
           </Text>
           <View style={[styles.ownedCard, isNight ? styles.ownedCardNight : styles.ownedCardDay]}>
-            <Text style={styles.ownedIcon}>📦</Text>
+            <Text style={styles.ownedIcon}>🎒</Text>
             <Text style={[styles.ownedText, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-              아직 구매한 아이템이 없습니다
+              아직 구매한 아이템이 없습니다.
             </Text>
           </View>
         </View>
@@ -99,6 +154,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  loadingWrap: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 12,
+  },
+  emptyText: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 12,
+    paddingVertical: 16,
   },
   itemCard: {
     width: '48%',
