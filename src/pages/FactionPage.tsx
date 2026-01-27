@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { AuthorityGauge } from '../components/AuthorityGauge';
 import { useGameState } from '../contexts/GameStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { applyMinsim } from '../services/minsimService';
+import { resolveFaction } from '../services/factionService';
+import { useFaction } from '../contexts/FactionContext';
 
 export function FactionPage() {
   const { isNight } = useDayNight();
@@ -13,20 +16,89 @@ export function FactionPage() {
   const { user } = useAuth();
   const [isManipulating, setIsManipulating] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [manipulationError, setManipulationError] = useState('');
+  const [isFighting, setIsFighting] = useState(false);
+  const [fightResult, setFightResult] = useState('');
+  const {
+    usedManipulationToday,
+    setUsedManipulationToday,
+    usedFightToday,
+    setUsedFightToday,
+  } = useFaction();
   const winRate = Math.round(gameState?.winRate ?? 55);
   const opponentRate = Math.max(0, 100 - winRate);
+  const displayWinRate = Math.min(100, winRate + (usedManipulationToday ? 5 : 0));
+  const displayOpponentRate = Math.max(0, 100 - displayWinRate);
   const manipulationCost = 500;
+  const isLockedToday = usedFightToday;
+  const storageKey =
+    user?.id && gameState?.dayCount
+      ? `faction:${user.id}:${gameState.dayCount}`
+      : null;
+
+  useEffect(() => {
+    if (!storageKey) {
+      return;
+    }
+    let cancelled = false;
+    const loadState = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(storageKey);
+        if (cancelled) {
+          return;
+        }
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            usedManipulationToday?: boolean;
+            usedFightToday?: boolean;
+          };
+          setUsedManipulationToday(Boolean(parsed.usedManipulationToday));
+          setUsedFightToday(Boolean(parsed.usedFightToday));
+        } else {
+          setUsedManipulationToday(false);
+          setUsedFightToday(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setFightResult('');
+          setActionError('');
+          setManipulationError('');
+        }
+      }
+    };
+    loadState();
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey, setUsedManipulationToday, setUsedFightToday]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      return;
+    }
+    AsyncStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        usedManipulationToday,
+        usedFightToday,
+      })
+    );
+  }, [storageKey, usedManipulationToday, usedFightToday]);
 
   const handleManipulate = async () => {
     if (!user?.id || isManipulating) {
       return;
     }
+    if (usedManipulationToday || usedFightToday) {
+      setManipulationError('오늘은 이미 여론 조작을 사용했어요.');
+      return;
+    }
     if (gameState && gameState.minsim < manipulationCost) {
-      setActionError('민심이 부족합니다.');
+      setManipulationError('민심이 부족합니다.');
       return;
     }
     setIsManipulating(true);
-    setActionError('');
+    setManipulationError('');
     try {
       await applyMinsim(user.id, {
         amount: -manipulationCost,
@@ -35,10 +107,41 @@ export function FactionPage() {
         refId: gameState?.dayCount ?? 0,
       });
       refresh();
+      setUsedManipulationToday(true);
     } catch (error) {
-      setActionError('여론 조작에 실패했어요.');
+      setManipulationError('여론 조작에 실패했어요.');
     } finally {
       setIsManipulating(false);
+    }
+  };
+
+  const handleFight = async () => {
+    if (!user?.id || isFighting) {
+      return;
+    }
+    if (usedFightToday) {
+      setActionError('오늘은 이미 승부를 봤어요.');
+      return;
+    }
+
+    setIsFighting(true);
+    setActionError('');
+    setFightResult('');
+    try {
+      const response = await resolveFaction({
+        userId: user.id,
+        dayCount: gameState?.dayCount ?? 1,
+        manipulationUsed: usedManipulationToday ? 1 : 0,
+      });
+      setFightResult(
+        `결과: ${response.data.result} · 권위 변화 ${response.data.authorityDelta}`
+      );
+      refresh();
+      setUsedFightToday(true);
+    } catch (error) {
+      setActionError('승부 처리에 실패했어요.');
+    } finally {
+      setIsFighting(false);
     }
   };
 
@@ -65,14 +168,18 @@ export function FactionPage() {
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
                 보수파
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>{opponentRate}%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>
+                {displayOpponentRate}%
+              </Text>
             </View>
             <Text style={[styles.vsText, isNight ? styles.textMutedNight : styles.textMutedDay]}>VS</Text>
             <View style={styles.predictionCell}>
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
                 여론파
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueHot]}>{winRate}%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueHot]}>
+                {displayWinRate}%
+              </Text>
             </View>
           </View>
         </View>
@@ -83,9 +190,13 @@ export function FactionPage() {
           </Text>
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, isNight ? styles.actionCardNight : styles.actionCardDay]}
+            style={[
+              styles.actionCard,
+              isNight ? styles.actionCardNight : styles.actionCardDay,
+              usedManipulationToday || usedFightToday ? styles.actionCardDisabled : null,
+            ]}
             onPress={handleManipulate}
-            disabled={isManipulating}
+            disabled={isManipulating || usedManipulationToday || usedFightToday}
           >
             <View style={[styles.actionIconWrap, isNight ? styles.actionIconWrapNight : styles.actionIconWrapDay]}>
               <Feather name="coffee" size={22} color={isNight ? '#60a5fa' : '#b45309'} />
@@ -95,7 +206,7 @@ export function FactionPage() {
                 여론 조작하기
               </Text>
               <Text style={[styles.actionSubtitle, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                민심을 소모해 오늘 승률을 올립니다.
+                {usedManipulationToday ? '오늘 완료됨' : '민심을 소모해 오늘 승률을 올립니다.'}
               </Text>
             </View>
             <View style={styles.actionMeta}>
@@ -103,6 +214,7 @@ export function FactionPage() {
               <Text style={styles.actionBenefit}>+5% 승률</Text>
             </View>
           </TouchableOpacity>
+          {manipulationError ? <Text style={styles.inlineErrorText}>{manipulationError}</Text> : null}
         </View>
 
         <View style={styles.spacer} />
@@ -113,14 +225,23 @@ export function FactionPage() {
           </Text>
           <TouchableOpacity
             activeOpacity={0.9}
-            style={[styles.mainButton, isNight ? styles.mainButtonNight : styles.mainButtonDay]}
+            style={[
+              styles.mainButton,
+              isNight ? styles.mainButtonNight : styles.mainButtonDay,
+              isLockedToday ? styles.mainButtonDisabled : null,
+            ]}
+            onPress={handleFight}
+            disabled={isFighting || isLockedToday}
           >
             <Feather name="zap" size={24} color="#fff" />
-            <Text style={styles.mainButtonText}>승부 보기</Text>
+            <Text style={styles.mainButtonText}>
+              {isFighting ? '처리 중...' : usedFightToday ? '오늘 완료됨' : '승부 보기'}
+            </Text>
           </TouchableOpacity>
           <Text style={[styles.mainActionHint, isNight ? styles.hintNight : styles.hintDay]}>
-            현재 승률 {winRate}%로 결과를 확인합니다.
+            현재 승률 {displayWinRate}%로 결과를 확인합니다.
           </Text>
+          {fightResult ? <Text style={styles.resultText}>{fightResult}</Text> : null}
           {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
         </View>
       </ScrollView>
@@ -238,6 +359,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f172a',
     borderColor: '#1e293b',
   },
+  actionCardDisabled: {
+    opacity: 0.5,
+  },
   actionIconWrap: {
     padding: 12,
     borderRadius: 999,
@@ -272,6 +396,12 @@ const styles = StyleSheet.create({
     color: '#22c55e',
     fontSize: 11,
   },
+  inlineErrorText: {
+    marginTop: 6,
+    marginLeft: 6,
+    fontSize: 11,
+    color: '#b91c1c',
+  },
   spacer: {
     flex: 1,
   },
@@ -299,6 +429,9 @@ const styles = StyleSheet.create({
   },
   mainButtonNight: {
     backgroundColor: '#dc2626',
+  },
+  mainButtonDisabled: {
+    opacity: 0.5,
   },
   mainButtonText: {
     color: '#fff',
@@ -333,5 +466,11 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
     fontSize: 12,
     marginTop: 8,
+  },
+  resultText: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 6,
+    color: '#0f766e',
   },
 });

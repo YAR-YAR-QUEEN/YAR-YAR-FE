@@ -6,6 +6,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { GameStateProvider } from './src/contexts/GameStateContext';
 import { PetitionProvider } from './src/contexts/PetitionContext';
 import { ReelsProvider } from './src/contexts/ReelsContext';
+import { FactionProvider } from './src/contexts/FactionContext';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
@@ -128,9 +129,11 @@ export default function App() {
         <GameStateProvider>
           <PetitionProvider>
             <ReelsProvider>
-              <DayNightProvider>
-                <AppContent />
-              </DayNightProvider>
+              <FactionProvider>
+                <DayNightProvider>
+                  <AppContent />
+                </DayNightProvider>
+              </FactionProvider>
             </ReelsProvider>
           </PetitionProvider>
         </GameStateProvider>
