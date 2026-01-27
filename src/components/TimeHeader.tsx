@@ -3,9 +3,13 @@ import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
+import { useGameState } from '../contexts/GameStateContext';
 
 export function TimeHeader() {
   const { isNight, currentTime } = useDayNight();
+  const { gameState } = useGameState();
+  const minsimValue = gameState?.minsim ?? 0;
+  const minsimLabel = minsimValue.toLocaleString();
 
   return (
     <View
@@ -73,7 +77,7 @@ export function TimeHeader() {
             isNight ? styles.textNight : styles.textDay,
           ]}
         >
-          1,200
+          {minsimLabel}
         </Text>
         <Feather
           name="battery"

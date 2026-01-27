@@ -181,6 +181,18 @@ export interface MinsimLogDto {
 	createdAt: string;
 }
 
+export interface MinsimApplyRequestDto {
+	amount: number;
+	reason: MinsimReason;
+	refTable?: string;
+	refId?: number;
+}
+
+export interface MinsimApplyResponseDto {
+	appliedAmount: number;
+	createdAt: string;
+}
+
 export interface FactionResultDto {
 	dayCount: number;
 	

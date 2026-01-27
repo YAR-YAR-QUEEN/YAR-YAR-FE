@@ -6,11 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGameState } from '../contexts/GameStateContext';
 import { fetchItems, fetchUserItems } from '../services/itemService';
+import { applyMinsim } from '../services/minsimService';
 import type { ItemDto, UserItemDto } from '../types/dto';
 
 const getItemIcon = (item: ItemDto) => {
@@ -48,12 +51,14 @@ const formatExpireAt = (value?: string) => {
 export function MarketPage() {
   const { isNight } = useDayNight();
   const { user } = useAuth();
+  const { gameState, refresh } = useGameState();
   const [items, setItems] = useState<ItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [ownedItems, setOwnedItems] = useState<UserItemDto[]>([]);
   const [ownedLoading, setOwnedLoading] = useState(false);
   const [ownedFailed, setOwnedFailed] = useState(false);
+  const [purchasingId, setPurchasingId] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -72,7 +77,7 @@ export function MarketPage() {
       });
   }, []);
 
-  useEffect(() => {
+  const loadOwnedItems = () => {
     if (!user?.id) {
       setOwnedItems([]);
       return;
@@ -92,7 +97,37 @@ export function MarketPage() {
       .finally(() => {
         setOwnedLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadOwnedItems();
   }, [user?.id]);
+
+  const handlePurchase = async (item: ItemDto) => {
+    if (!user?.id || purchasingId !== null) {
+      return;
+    }
+    if (gameState && gameState.minsim < item.priceMinsim) {
+      Alert.alert('민심 부족', '민심이 부족합니다.');
+      return;
+    }
+
+    setPurchasingId(item.id);
+    try {
+      await applyMinsim(user.id, {
+        amount: -item.priceMinsim,
+        reason: 'ITEM_PURCHASE',
+        refTable: 'items',
+        refId: item.id,
+      });
+      refresh();
+      loadOwnedItems();
+    } catch (error) {
+      Alert.alert('구매 실패', '아이템 구매에 실패했어요.');
+    } finally {
+      setPurchasingId(null);
+    }
+  };
 
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
@@ -136,9 +171,11 @@ export function MarketPage() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.buyButton, isNight ? styles.buyButtonNight : styles.buyButtonDay]}
+                onPress={() => handlePurchase(item)}
+                disabled={purchasingId !== null}
               >
                 <Text style={[styles.buyButtonText, isNight ? styles.buyTextNight : styles.buyTextDay]}>
-                  구매하기
+                  {purchasingId === item.id ? '구매 중...' : '구매하기'}
                 </Text>
               </TouchableOpacity>
             </View>
