@@ -1,8 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import Feather from 'react-native-vector-icons/Feather';
+import { useAuth } from '../contexts/AuthContext';
+import { usePetition } from '../contexts/PetitionContext';
+import { useReels } from '../contexts/ReelsContext';
+import { uploadAndAnalyze } from '../services/reelsService';
 
 interface FilmingPageProps {
   onNavigate?: (route: string) => void;
@@ -13,12 +24,18 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
   const [cameraPosition, setCameraPosition] = useState<'back' | 'front'>('back');
   const device = useCameraDevice(cameraPosition);
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const { selectedPetition } = usePetition();
+  const { setAnalysisResult } = useReels();
 
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [recordedFileUri, setRecordedFileUri] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -68,14 +85,17 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
   };
 
   const startRecording = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || isUploading) return;
     setRecordingTime(0);
     setIsComplete(false);
+    setRecordedFileUri(null);
+    setUploadError(null);
     setIsRecording(true);
     cameraRef.current.startRecording({
-      onRecordingFinished: () => {
+      onRecordingFinished: (video) => {
         setIsRecording(false);
         setIsComplete(true);
+        setRecordedFileUri(video.path);
       },
       onRecordingError: () => {
         setIsRecording(false);
@@ -92,7 +112,43 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
     setRecordingTime(0);
     setIsComplete(false);
     setIsRecording(false);
+    setRecordedFileUri(null);
+    setUploadError(null);
   };
+
+  const handleAnalyze = async () => {
+    if (!recordedFileUri || isUploading) {
+      return;
+    }
+    if (!user) {
+      setUploadError('로그인이 필요합니다.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const result = await uploadAndAnalyze({
+        fileUri: recordedFileUri,
+        userId: user.id,
+        petitionId: selectedPetition?.id,
+      });
+      setAnalysisResult(result);
+      onNavigate?.('/analysis');
+    } catch (error) {
+      setUploadError('업로드에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const missionTitle = selectedPetition
+    ? selectedPetition.type === 'POSITIVE'
+      ? '기쁜 소식'
+      : '어두운 소식'
+    : '오늘의 미션';
+  const missionDesc =
+    selectedPetition?.description ?? '도파민 부족을 해결할 영상을 촬영해요.';
 
   if (!device) {
     return (
@@ -118,22 +174,23 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
 
   return (
     <View style={styles.container}>
-        {!isComplete && (
-            <Camera
-            ref={cameraRef}
-            style={StyleSheet.absoluteFill}
-            device={device}
-            isActive
-            video
-            audio
-            />
-        )}
+      {!isComplete && (
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive
+          video
+          audio
+        />
+      )}
 
       <View style={[styles.topBar, { top: insets.top + 12 }]}>
         <TouchableOpacity
           style={styles.topBackButton}
           onPress={() => onNavigate?.('/street')}
           activeOpacity={0.8}
+          disabled={isUploading}
         >
           <Feather name="arrow-left" size={18} color="#fff" />
         </TouchableOpacity>
@@ -144,23 +201,25 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
           </View>
         )}
         <View style={styles.missionBox}>
-          <Text style={styles.missionTitle}>오늘의 미션</Text>
-          <Text style={styles.missionDesc}>도파민 부족 해결</Text>
+          <Text style={styles.missionTitle}>{missionTitle}</Text>
+          <Text style={styles.missionDesc} numberOfLines={1}>
+            {missionDesc}
+          </Text>
         </View>
       </View>
 
       <View style={styles.centerInfo}>
         {!isComplete ? (
           <>
-            <Text style={styles.bigEmoji}>📹</Text>
-            <Text style={styles.headline}>{isRecording ? '촬영 중...' : '준비되셨나요?'}</Text>
+            <Text style={styles.bigEmoji}>📷</Text>
+            <Text style={styles.headline}>{isRecording ? '촬영 중...' : '준비되었나요?'}</Text>
             <Text style={styles.subline}>
-              {isRecording ? '멈춤 버튼을 눌러 촬영 종료' : '최대 15초까지 촬영 가능'}
+              {isRecording ? '정지 버튼으로 촬영 종료' : '최대 15초까지 촬영 가능'}
             </Text>
           </>
         ) : (
           <>
-            <Text style={styles.bigEmoji}>✨</Text>
+            <Text style={styles.bigEmoji}>✅</Text>
             <Text style={styles.headline}>촬영 완료!</Text>
             <Text style={styles.subline}>촬영 시간: {recordingTime}초</Text>
           </>
@@ -174,6 +233,7 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
             <TouchableOpacity
               style={[styles.recordButton, isRecording && styles.recordStop]}
               onPress={isRecording ? stopRecording : startRecording}
+              disabled={isUploading}
             >
               {isRecording ? (
                 <Feather name="square" size={26} color="#fff" />
@@ -182,8 +242,8 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.smallButton, isRecording && styles.disabled]}
-              disabled={isRecording}
+              style={[styles.smallButton, (isRecording || isUploading) && styles.disabled]}
+              disabled={isRecording || isUploading}
               onPress={() =>
                 setCameraPosition((prev) => (prev === 'back' ? 'front' : 'back'))
               }
@@ -193,14 +253,23 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
           </View>
         ) : (
           <View style={styles.completeRow}>
-            <TouchableOpacity style={styles.secondary} onPress={resetRecording}>
-              <Text style={styles.secondaryText}>다시 찍기</Text>
+            <TouchableOpacity style={styles.secondary} onPress={resetRecording} disabled={isUploading}>
+              <Text style={styles.secondaryText}>다시 촬영</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.primary} onPress={() => onNavigate?.('/analysis')}>
-              <Text style={styles.primaryText}>분석 보기</Text>
+            <TouchableOpacity
+              style={[styles.primary, isUploading && styles.disabled]}
+              onPress={handleAnalyze}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryText}>분석 보기</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
+        {uploadError ? <Text style={styles.errorText}>{uploadError}</Text> : null}
       </View>
     </View>
   );
@@ -279,6 +348,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
+    maxWidth: 180,
   },
   missionTitle: {
     color: '#fff',
@@ -375,5 +445,10 @@ const styles = StyleSheet.create({
   primaryText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  errorText: {
+    color: '#fecaca',
+    fontSize: 12,
+    marginTop: 8,
   },
 });

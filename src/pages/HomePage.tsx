@@ -11,6 +11,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import Svg, { Path } from 'react-native-svg';
 import { useDayNight } from '../contexts/DayNightContext';
 import { AuthorityGauge } from '../components/AuthorityGauge';
+import { useGameState } from '../contexts/GameStateContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -19,7 +20,8 @@ interface HomePageProps {
 }
 
 export function HomePage({ onNavigate }: HomePageProps) {
-  const { isNight, toggleTime } = useDayNight();
+  const { isNight, toggleDebugTime } = useDayNight();
+  const { gameState } = useGameState();
   
   return (
     <View
@@ -28,20 +30,16 @@ export function HomePage({ onNavigate }: HomePageProps) {
         isNight ? styles.containerNight : styles.containerDay,
       ]}
     >
-      {/* Day/Night Toggle Button */}
+      {/* Debug Button */}
       <TouchableOpacity
-        onPress={toggleTime}
+        onPress={toggleDebugTime}
         style={[
           styles.toggleButton,
           isNight ? styles.toggleButtonNight : styles.toggleButtonDay,
         ]}
         activeOpacity={0.8}
       >
-        {isNight ? (
-          <Ionicons name="sunny" size={20} color="#60a5fa" />
-        ) : (
-          <Ionicons name="moon" size={20} color="#78350f" />
-        )}
+        <Ionicons name="moon" size={20} color={isNight ? '#60a5fa' : '#78350f'} />
       </TouchableOpacity>
 
       <View style={styles.mainContent}>
@@ -108,7 +106,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           styles.gaugeContainer,
           isNight ? styles.gaugeContainerNight : styles.gaugeContainerDay,
         ]}>
-        <AuthorityGauge value={30}/>
+        <AuthorityGauge value={gameState?.authority ?? 30}/>
       </View>
     </View>
   );

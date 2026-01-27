@@ -1,12 +1,150 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
 import { AuthorityGauge } from '../components/AuthorityGauge';
+import { useGameState } from '../contexts/GameStateContext';
+import { useAuth } from '../contexts/AuthContext';
+import { applyMinsim } from '../services/minsimService';
+import { resolveFaction } from '../services/factionService';
+import { useFaction } from '../contexts/FactionContext';
 
 export function FactionPage() {
   const { isNight } = useDayNight();
-  
+  const { gameState, refresh } = useGameState();
+  const { user } = useAuth();
+  const [isManipulating, setIsManipulating] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [manipulationError, setManipulationError] = useState('');
+  const [isFighting, setIsFighting] = useState(false);
+  const [fightResult, setFightResult] = useState('');
+  const {
+    usedManipulationToday,
+    setUsedManipulationToday,
+    usedFightToday,
+    setUsedFightToday,
+  } = useFaction();
+  const winRate = Math.round(gameState?.winRate ?? 55);
+  const opponentRate = Math.max(0, 100 - winRate);
+  const displayWinRate = Math.min(100, winRate + (usedManipulationToday ? 5 : 0));
+  const displayOpponentRate = Math.max(0, 100 - displayWinRate);
+  const manipulationCost = 500;
+  const isLockedToday = usedFightToday;
+  const storageKey =
+    user?.id && gameState?.dayCount
+      ? `faction:${user.id}:${gameState.dayCount}`
+      : null;
+
+  useEffect(() => {
+    if (!storageKey) {
+      return;
+    }
+    let cancelled = false;
+    const loadState = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(storageKey);
+        if (cancelled) {
+          return;
+        }
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            usedManipulationToday?: boolean;
+            usedFightToday?: boolean;
+          };
+          setUsedManipulationToday(Boolean(parsed.usedManipulationToday));
+          setUsedFightToday(Boolean(parsed.usedFightToday));
+        } else {
+          setUsedManipulationToday(false);
+          setUsedFightToday(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setFightResult('');
+          setActionError('');
+          setManipulationError('');
+        }
+      }
+    };
+    loadState();
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey, setUsedManipulationToday, setUsedFightToday]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      return;
+    }
+    AsyncStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        usedManipulationToday,
+        usedFightToday,
+      })
+    );
+  }, [storageKey, usedManipulationToday, usedFightToday]);
+
+  const handleManipulate = async () => {
+    if (!user?.id || isManipulating) {
+      return;
+    }
+    if (usedManipulationToday || usedFightToday) {
+      setManipulationError('오늘은 이미 여론 조작을 사용했어요.');
+      return;
+    }
+    if (gameState && gameState.minsim < manipulationCost) {
+      setManipulationError('민심이 부족합니다.');
+      return;
+    }
+    setIsManipulating(true);
+    setManipulationError('');
+    try {
+      await applyMinsim(user.id, {
+        amount: -manipulationCost,
+        reason: 'MANIPULATION',
+        refTable: 'faction',
+        refId: gameState?.dayCount ?? 0,
+      });
+      refresh();
+      setUsedManipulationToday(true);
+    } catch (error) {
+      setManipulationError('여론 조작에 실패했어요.');
+    } finally {
+      setIsManipulating(false);
+    }
+  };
+
+  const handleFight = async () => {
+    if (!user?.id || isFighting) {
+      return;
+    }
+    if (usedFightToday) {
+      setActionError('오늘은 이미 승부를 봤어요.');
+      return;
+    }
+
+    setIsFighting(true);
+    setActionError('');
+    setFightResult('');
+    try {
+      const response = await resolveFaction({
+        userId: user.id,
+        dayCount: gameState?.dayCount ?? 1,
+        manipulationUsed: usedManipulationToday ? 1 : 0,
+      });
+      setFightResult(
+        `결과: ${response.data.result} · 권위 변화 ${response.data.authorityDelta}`
+      );
+      refresh();
+      setUsedFightToday(true);
+    } catch (error) {
+      setActionError('승부 처리에 실패했어요.');
+    } finally {
+      setIsFighting(false);
+    }
+  };
+
   return (
     <View style={[styles.container, isNight ? styles.containerNight : styles.containerDay]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -18,7 +156,7 @@ export function FactionPage() {
         </View>
 
         <View style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}>
-          <AuthorityGauge value={30} />
+          <AuthorityGauge value={gameState?.authority ?? 30} />
         </View>
 
         <View style={styles.section}>
@@ -28,24 +166,21 @@ export function FactionPage() {
           <View style={styles.predictionRow}>
             <View style={styles.predictionCell}>
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                대원군
+                보수파
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>45%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueMuted]}>
+                {displayOpponentRate}%
+              </Text>
             </View>
             <Text style={[styles.vsText, isNight ? styles.textMutedNight : styles.textMutedDay]}>VS</Text>
             <View style={styles.predictionCell}>
               <Text style={[styles.predictionLabel, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                황후
+                여론파
               </Text>
-              <Text style={[styles.predictionValue, styles.predictionValueHot]}>55%</Text>
+              <Text style={[styles.predictionValue, styles.predictionValueHot]}>
+                {displayWinRate}%
+              </Text>
             </View>
-          </View>
-
-          <View style={[styles.infoBox, isNight ? styles.infoBoxNight : styles.infoBoxDay]}>
-            <Feather name="trending-up" size={14} color={isNight ? '#bfdbfe' : '#1d4ed8'} />
-            <Text style={[styles.infoText, isNight ? styles.infoTextNight : styles.infoTextDay]}>
-              AI 분석: 어제 올린 '고양이 챌린지'가 화제성 지표를 견인했습니다.
-            </Text>
           </View>
         </View>
 
@@ -55,7 +190,13 @@ export function FactionPage() {
           </Text>
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionCard, isNight ? styles.actionCardNight : styles.actionCardDay]}
+            style={[
+              styles.actionCard,
+              isNight ? styles.actionCardNight : styles.actionCardDay,
+              usedManipulationToday || usedFightToday ? styles.actionCardDisabled : null,
+            ]}
+            onPress={handleManipulate}
+            disabled={isManipulating || usedManipulationToday || usedFightToday}
           >
             <View style={[styles.actionIconWrap, isNight ? styles.actionIconWrapNight : styles.actionIconWrapDay]}>
               <Feather name="coffee" size={22} color={isNight ? '#60a5fa' : '#b45309'} />
@@ -65,32 +206,43 @@ export function FactionPage() {
                 여론 조작하기
               </Text>
               <Text style={[styles.actionSubtitle, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                성균관 유생들에게 뜨거운 가배를 돌려 개화 여론을 형성합니다.
+                {usedManipulationToday ? '오늘 완료됨' : '민심을 소모해 오늘 승률을 올립니다.'}
               </Text>
             </View>
             <View style={styles.actionMeta}>
-              <Text style={styles.actionCost}>❤️ -500</Text>
+              <Text style={styles.actionCost}>민심 -{manipulationCost}</Text>
               <Text style={styles.actionBenefit}>+5% 승률</Text>
             </View>
           </TouchableOpacity>
+          {manipulationError ? <Text style={styles.inlineErrorText}>{manipulationError}</Text> : null}
         </View>
 
         <View style={styles.spacer} />
 
         <View style={styles.mainAction}>
           <Text style={[styles.mainActionNote, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-            <Text style={styles.mainActionNoteStrong}>오늘의 대결</Text> • 하루 1회 가능
+            <Text style={styles.mainActionNoteStrong}>오늘의 대결</Text> 하루 1회 제한
           </Text>
           <TouchableOpacity
             activeOpacity={0.9}
-            style={[styles.mainButton, isNight ? styles.mainButtonNight : styles.mainButtonDay]}
+            style={[
+              styles.mainButton,
+              isNight ? styles.mainButtonNight : styles.mainButtonDay,
+              isLockedToday ? styles.mainButtonDisabled : null,
+            ]}
+            onPress={handleFight}
+            disabled={isFighting || isLockedToday}
           >
             <Feather name="zap" size={24} color="#fff" />
-            <Text style={styles.mainButtonText}>싸움 붙이기</Text>
+            <Text style={styles.mainButtonText}>
+              {isFighting ? '처리 중...' : usedFightToday ? '오늘 완료됨' : '승부 보기'}
+            </Text>
           </TouchableOpacity>
           <Text style={[styles.mainActionHint, isNight ? styles.hintNight : styles.hintDay]}>
-            현재 승률 55%로 즉시 결과를 확인합니다
+            현재 승률 {displayWinRate}%로 결과를 확인합니다.
           </Text>
+          {fightResult ? <Text style={styles.resultText}>{fightResult}</Text> : null}
+          {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
         </View>
       </ScrollView>
     </View>
@@ -192,30 +344,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginHorizontal: 12,
   },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    borderRadius: 12,
-  },
-  infoBoxDay: {
-    backgroundColor: '#dbeafe',
-  },
-  infoBoxNight: {
-    backgroundColor: 'rgba(30, 58, 138, 0.25)',
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  infoTextDay: {
-    color: '#1e3a8a',
-  },
-  infoTextNight: {
-    color: '#bfdbfe',
-  },
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,6 +358,9 @@ const styles = StyleSheet.create({
   actionCardNight: {
     backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  actionCardDisabled: {
+    opacity: 0.5,
   },
   actionIconWrap: {
     padding: 12,
@@ -265,6 +396,12 @@ const styles = StyleSheet.create({
     color: '#22c55e',
     fontSize: 11,
   },
+  inlineErrorText: {
+    marginTop: 6,
+    marginLeft: 6,
+    fontSize: 11,
+    color: '#b91c1c',
+  },
   spacer: {
     flex: 1,
   },
@@ -293,6 +430,9 @@ const styles = StyleSheet.create({
   mainButtonNight: {
     backgroundColor: '#dc2626',
   },
+  mainButtonDisabled: {
+    opacity: 0.5,
+  },
   mainButtonText: {
     color: '#fff',
     fontSize: 18,
@@ -309,44 +449,6 @@ const styles = StyleSheet.create({
   hintNight: {
     color: '#475569',
   },
-  gaugeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  gaugeTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  gaugeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  gaugeLabel: {
-    fontSize: 12,
-  },
-  gaugeValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  gaugeTrack: {
-    height: 12,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  gaugeTrackDay: {
-    backgroundColor: '#fde68a',
-  },
-  gaugeTrackNight: {
-    backgroundColor: '#1e293b',
-  },
-  gaugeFill: {
-    height: '100%',
-    backgroundColor: '#22c55e',
-    borderRadius: 6,
-  },
   textMainDay: {
     color: '#78350f',
   },
@@ -358,5 +460,17 @@ const styles = StyleSheet.create({
   },
   textMutedNight: {
     color: '#94a3b8',
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#b91c1c',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  resultText: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 6,
+    color: '#0f766e',
   },
 });

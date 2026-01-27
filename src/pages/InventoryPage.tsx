@@ -1,28 +1,70 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchUserItems } from '../services/itemService';
+import type { UserItemDto } from '../types/dto';
 
 interface InventoryPageProps {
   onNavigate?: (route: string) => void;
 }
 
-interface OwnedItem {
-  id: number;
-  name: string;
-  icon: string;
-  effect: string;
-  quantity: number;
-}
+const getItemIcon = (type?: string) => {
+  if (type === 'FILTER') return '🎞️';
+  if (type === 'BUFF') return '✨';
+  return '🎁';
+};
 
-const OWNED_ITEMS: OwnedItem[] = [
-  { id: 1, name: '가비(Coffee)', icon: '☕', effect: '도파민 +10', quantity: 3 },
-  { id: 2, name: '서양식 선글라스', icon: '🕶️', effect: '화제성 +15', quantity: 1 },
-  { id: 3, name: '축음기', icon: '📻', effect: '음악 효과', quantity: 2 },
-];
+const formatExpireAt = (value?: string) => {
+  if (!value) return '만료 없음';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const diffMs = date.getTime() - Date.now();
+  if (diffMs <= 0) return '만료됨';
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}일 ${hours}시간 남음`;
+  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
+  return `${minutes}분 남음`;
+};
 
 export function InventoryPage({ onNavigate }: InventoryPageProps) {
+  const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
-  const items = OWNED_ITEMS;
+  const [items, setItems] = useState<UserItemDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setItems([]);
+      return;
+    }
+
+    setLoading(true);
+    setLoadFailed(false);
+    fetchUserItems(user.id)
+      .then((response) => {
+        setItems(response.data);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        setItems([]);
+        setLoadFailed(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [user?.id]);
 
   return (
     <View style={[styles.container, styles.containerDay]}>
@@ -35,45 +77,59 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           >
             <Feather name="arrow-left" size={20} color="#78350f" />
           </TouchableOpacity>
-          <Text style={[styles.title, styles.titleDay]}>
-            📦 보유 아이템
-          </Text>
+          <Text style={[styles.title, styles.titleDay]}>보유 아이템</Text>
         </View>
 
         <Text style={[styles.subtitle, styles.subtitleDay]}>
-          숏폼 촬영에 사용할 아이템을 선택하세요
+          릴스 촬영에 사용할 아이템을 선택하세요.
         </Text>
+
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color="#f59e0b" />
+            <Text style={[styles.loadingText, styles.subtitleDay]}>
+              보유 아이템을 불러오는 중...
+            </Text>
+          </View>
+        ) : null}
+
+        {!loading && items.length === 0 ? (
+          <View style={[styles.emptyCard, styles.emptyCardDay]}>
+            <Text style={styles.emptyIcon}>🎒</Text>
+            <Text style={[styles.emptyText, styles.subtitleDay]}>
+              {loadFailed ? '아이템을 불러오지 못했어요.' : '아직 보유한 아이템이 없습니다.'}
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => onNavigate?.('/market')}
+              style={[styles.emptyButton, styles.emptyButtonDay]}
+            >
+              <Text style={styles.emptyButtonText}>상점 가기</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.grid}>
           {items.map((item) => {
-            const isSelected = selectedItem === item.id;
+            const isSelected = selectedItem === item.itemId;
             return (
               <TouchableOpacity
-                key={item.id}
+                key={item.itemId}
                 activeOpacity={0.9}
-                onPress={() => setSelectedItem(item.id)}
+                onPress={() => setSelectedItem(item.itemId)}
                 style={[
                   styles.itemCard,
                   isSelected ? styles.itemCardSelectedDay : styles.itemCardDay,
                 ]}
               >
-                <Text style={styles.itemIcon}>{item.icon}</Text>
-                <Text style={[styles.itemName, styles.textMainDay]}>
-                  {item.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.itemEffect,
-                    isSelected
-                      ? styles.itemEffectSelected
-                      : styles.textMutedDay,
-                  ]}
-                >
-                  {item.effect}
+                <Text style={styles.itemIcon}>{getItemIcon(item.type)}</Text>
+                <Text style={[styles.itemName, styles.textMainDay]}>{item.name}</Text>
+                <Text style={[styles.itemEffect, isSelected ? styles.itemEffectSelected : styles.textMutedDay]}>
+                  {item.remainCount}개 보유
                 </Text>
                 <View style={[styles.quantityBadge, styles.quantityBadgeDay]}>
                   <Text style={[styles.quantityText, styles.textMutedDay]}>
-                    보유 {item.quantity}개
+                    만료 {formatExpireAt(item.expireAt)}
                   </Text>
                 </View>
                 {isSelected && (
@@ -86,22 +142,6 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           })}
         </View>
 
-        {items.length === 0 && (
-          <View style={[styles.emptyCard, styles.emptyCardDay]}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={[styles.emptyText, styles.subtitleDay]}>
-              아직 보유한 아이템이 없습니다
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => onNavigate?.('/market')}
-              style={[styles.emptyButton, styles.emptyButtonDay]}
-            >
-              <Text style={styles.emptyButtonText}>상점 가기</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -111,9 +151,7 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
           onPress={() => onNavigate?.('/market')}
           style={[styles.secondaryButton, styles.secondaryButtonDay]}
         >
-          <Text style={[styles.secondaryButtonText, styles.secondaryTextDay]}>
-            더 구매하기
-          </Text>
+          <Text style={[styles.secondaryButtonText, styles.secondaryTextDay]}>상점 가기</Text>
         </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.9}
@@ -174,6 +212,14 @@ const styles = StyleSheet.create({
   },
   subtitleDay: {
     color: 'rgba(120, 53, 15, 0.7)',
+  },
+  loadingWrap: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 12,
   },
   grid: {
     flexDirection: 'row',

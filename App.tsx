@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DayNightProvider, useDayNight } from './src/contexts/DayNightContext';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { GameStateProvider } from './src/contexts/GameStateContext';
+import { PetitionProvider } from './src/contexts/PetitionContext';
+import { ReelsProvider } from './src/contexts/ReelsContext';
+import { FactionProvider } from './src/contexts/FactionContext';
 import { TimeHeader } from './src/components/TimeHeader';
 import { BottomNav } from './src/components/BottomNav';
 import { HomePage } from './src/pages/HomePage';
@@ -16,6 +21,7 @@ import { InventoryPage } from './src/pages/InventoryPage';
 import { FilmingPage } from './src/pages/FilmingPage';
 import { AnalysisPage } from './src/pages/AnalysisPage';
 import { ReactionPage } from './src/pages/ReactionPage';
+import { http } from "./src/services/http";
 
 // Route 타입 정의
 type RouteType =
@@ -119,9 +125,19 @@ function AppContent() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <DayNightProvider>
-        <AppContent />
-      </DayNightProvider>
+      <AuthProvider>
+        <GameStateProvider>
+          <PetitionProvider>
+            <ReelsProvider>
+              <FactionProvider>
+                <DayNightProvider>
+                  <AppContent />
+                </DayNightProvider>
+              </FactionProvider>
+            </ReelsProvider>
+          </PetitionProvider>
+        </GameStateProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   )
 }

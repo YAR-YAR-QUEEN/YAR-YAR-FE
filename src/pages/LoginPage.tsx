@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,51 @@ import {
   TextInput,
   TouchableOpacity,
   ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { login } from '../services/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
   onNavigate?: (route: string) => void;
 }
 
 export function LoginPage({ onNavigate }: LoginPageProps) {
+  const { setUser } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (loading) {
+      return;
+    }
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage('이메일과 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    setErrorMessage('');
+    setLoading(true);
+
+    try {
+      const response = await login({ email: email.trim(), password });
+      setUser(response.data);
+      Alert.alert('로그인 완료', '환영합니다!');
+      onNavigate?.('/');
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        '로그인에 실패했어요. 다시 확인해주세요.';
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -33,28 +71,37 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>아이디(ID)</Text>
+          <Text style={styles.label}>이메일</Text>
           <TextInput
             placeholder="함자를 적으시오"
             placeholderTextColor="#475569"
             style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>암호(PW)</Text>
+          <Text style={styles.label}>비밀번호</Text>
           <TextInput
             placeholder="비밀 통신 코드를 입력하시오"
             placeholderTextColor="#475569"
             secureTextEntry
             style={styles.input}
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
         <TouchableOpacity
           activeOpacity={0.9}
-          style={styles.loginButton}
-          onPress={() => onNavigate?.('/')}
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={loading}
         >
           <Text style={styles.loginButtonText}>로그인하기</Text>
         </TouchableOpacity>
@@ -145,6 +192,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
   },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 4,
+  },
   loginButton: {
     marginTop: 12,
     borderRadius: 14,
@@ -156,6 +209,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 6,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#ffffff',

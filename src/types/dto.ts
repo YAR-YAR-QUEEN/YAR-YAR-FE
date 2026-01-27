@@ -31,6 +31,11 @@ export interface LoginResponseDto {
 	user: UserDto;
 }
 
+export interface TimeResponseDto {
+	epochSeconds: number;
+	timeScale: number;
+}
+
 export interface GameStateDto {
 	dayCount: number;
 	phase: Phase;
@@ -38,6 +43,26 @@ export interface GameStateDto {
 	minsim: number;
 	authority: number;
 	daewongunPower: number;
+	winRate: number;
+	awareness: number;
+	buzz: number;
+	dopamine: number;
+	reelsScore: number;
+}
+
+export interface GameStateResponseDto {
+	dayCount: number;
+	phase: Phase;
+	
+	minsim: number;
+	authority: number;
+	daewongunPower: number;
+	winRate: number;
+	awareness?: number;
+	awarenesss?: number;
+	buzz: number;
+	dopamine: number;
+	reelsScore: number;
 }
 
 export interface PetitionDto {
@@ -55,6 +80,68 @@ export interface PetitionDto {
 		positive: number;
 		negative: number;
   };
+}
+
+export interface PetitionDetailDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionDetailResponseDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionListItemDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface PetitionListItemResponseDto {
+	id: number;
+	description: string;
+	type: PetitionType;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	createdAt: string;
+}
+
+export interface ReelsAnalysisScoresDto {
+	dopamine_score: number;
+	virality_score: number;
+	challenge_difficulty: number;
+}
+
+export interface ReelsAnalysisDto {
+	scores: ReelsAnalysisScoresDto;
+	comment: string;
+	breakdown: {
+		dopamine: Record<string, string>;
+		virality: Record<string, string>;
+		difficulty: Record<string, string>;
+	};
+}
+
+export interface UploadAnalyzeResponseDto {
+	videoUrl: string;
+	reelsId: number;
+	analysis: ReelsAnalysisDto;
 }
 
 export interface ReelsUploadRequestDto {
@@ -83,6 +170,50 @@ export interface ReelsDto {
 	reelsScore: number;
 }
 
+export interface ReelsListItemDto {
+	id: number;
+	videoUrl: string;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createdAt: string;
+}
+
+export interface ReelsListItemResponseDto {
+	id: number;
+	videoUrl: string;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createAt: string;
+}
+
+export interface ReelsDetailDto {
+	id: number;
+	videoUrl: string;
+	dopamine: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createdAt: string;
+}
+
+export interface ReelsDetailResponseDto {
+	id: number;
+	videoUrl: string;
+	dopamin: number;
+	buzz: number;
+	awareness: number;
+	reelsScore: number;
+	petitionId?: number;
+	createAt: string;
+}
+
 export interface MinsimLogDto {
 	id: number;
 	amount: number;
@@ -91,6 +222,18 @@ export interface MinsimLogDto {
 	refTable?: string;
 	refId?: number;
 	
+	createdAt: string;
+}
+
+export interface MinsimApplyRequestDto {
+	amount: number;
+	reason: MinsimReason;
+	refTable?: string;
+	refId?: number;
+}
+
+export interface MinsimApplyResponseDto {
+	appliedAmount: number;
 	createdAt: string;
 }
 

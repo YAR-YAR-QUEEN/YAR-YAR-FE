@@ -1,12 +1,58 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { signup } from '../services/auth';
 
 interface SignupPageProps {
   onNavigate?: (route: string) => void;
 }
 
 export function SignupPage({ onNavigate }: SignupPageProps) {
+  const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (loading) {
+      return;
+    }
+
+    if (!nickname.trim() || !email.trim() || !password.trim()) {
+      setErrorMessage('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    setErrorMessage('');
+    setLoading(true);
+
+    try {
+      await signup({
+        nickname: nickname.trim(),
+        email: email.trim(),
+        password,
+      });
+      Alert.alert('회원가입이 완료되었습니다.');
+      onNavigate?.('/login');
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        '회원가입에 실패하였습니다. 입력한 정보를 다시 확인해주세요. ';
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -22,25 +68,48 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>성함</Text>
-          <TextInput style={styles.input} placeholderTextColor="#475569" />
+          <TextInput
+            style={styles.input}
+            value={nickname}
+            onChangeText={setNickname}
+            autoCapitalize="none"
+          />
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>아이디</Text>
-          <TextInput style={styles.input} placeholderTextColor="#475569" />
+          <Text style={styles.label}>이메일</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>비밀번호</Text>
-          <TextInput style={styles.input} placeholderTextColor="#475569" secureTextEntry />
+          <Text style={styles.label}>패스워드</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
         </View>
+
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <TouchableOpacity
           activeOpacity={0.9}
-          style={styles.submitButton}
-          onPress={() => onNavigate?.('/')}
+          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={loading}
         >
-          <Text style={styles.submitButtonText}>입궁하기</Text>
+          {loading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.submitButtonText}>입궁하기</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -90,6 +159,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
   },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 4,
+  },
   submitButton: {
     marginTop: 24,
     borderRadius: 14,
@@ -101,6 +176,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 6,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     color: '#ffffff',
