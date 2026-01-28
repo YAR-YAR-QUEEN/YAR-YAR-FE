@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import { useAuth } from '../contexts/AuthContext';
+import { useDayNight } from '../contexts/DayNightContext';
 import { useGameState } from '../contexts/GameStateContext';
 import { fetchReelsList } from '../services/reelsListService';
 import { applyMinsim } from '../services/minsimService';
@@ -37,6 +38,7 @@ interface ReactionPageProps {
 
 export function ReactionPage({ onNavigate }: ReactionPageProps) {
   const { user } = useAuth();
+  const { currentTime } = useDayNight();
   const { gameState, refresh } = useGameState();
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -129,7 +131,9 @@ export function ReactionPage({ onNavigate }: ReactionPageProps) {
       <View style={styles.frame} />
 
       <View style={styles.statusBar}>
-        <Text style={styles.statusTime}>해시(亥時) 🐷</Text>
+        <Text style={styles.statusTime}>
+          {currentTime.name} {currentTime.emoji}
+        </Text>
         <View style={styles.statusIcons}>
           <Feather name="signal" size={12} color="#e2e8f0" />
           <Feather name="battery" size={16} color="#e2e8f0" />
