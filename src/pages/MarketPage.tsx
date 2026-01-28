@@ -17,6 +17,10 @@ import { applyMinsim } from '../services/minsimService';
 import type { ItemDto, UserItemDto } from '../types/dto';
 
 const getItemIcon = (item: ItemDto) => {
+  if (item.id === 1) return '📡';
+  if (item.id === 2) return '🧿';
+  if (item.id === 3) return '📣';
+  if (item.id === 4) return '🏅';
   if (item.type === 'FILTER') return '🎞️';
   if (item.type === 'BUFF') return '✨';
   return '🎁';
@@ -25,12 +29,12 @@ const getItemIcon = (item: ItemDto) => {
 const getEffectLabel = (item: ItemDto) => {
   const { type, value, duration } = item.effect;
   if (type === 'REELS_MULTIPLIER') {
-    return `릴스 x${value} (${duration}s)`;
+    return `획득 릴스력 x${value}`;
   }
   if (type === 'AUTHORITY_BUFF') {
-    return `권위 +${value} (${duration}s)`;
+    return `릴스력 +${value}`;
   }
-  return `효과 +${value} (${duration}s)`;
+  return `효과 +${value}`;
 };
 
 const formatExpireAt = (value?: string) => {
@@ -63,18 +67,38 @@ export function MarketPage() {
   useEffect(() => {
     setLoading(true);
     setLoadFailed(false);
-    fetchItems()
-      .then((response) => {
-        setItems(response.data);
-        setLoadFailed(false);
-      })
-      .catch(() => {
-        setItems([]);
-        setLoadFailed(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    setItems([
+      {
+        id: 1,
+        name: '5G 봉수대',
+        type: 'FILTER',
+        priceMinsim: 120,
+        effect: { type: 'REELS_MULTIPLIER', value: 1.5, duration: 300 },
+      },
+      {
+        id: 2,
+        name: '알고리즘 부적',
+        type: 'BUFF',
+        priceMinsim: 200,
+        effect: { type: 'REELS_MULTIPLIER', value: 2, duration: 180 },
+      },
+      {
+        id: 3,
+        name: '백성 확성기',
+        type: 'FILTER',
+        priceMinsim: 150,
+        effect: { type: 'REELS_MULTIPLIER', value: 1.3, duration: 240 },
+      },
+      {
+        id: 4,
+        name: '황실 인증패',
+        type: 'BUFF',
+        priceMinsim: 300,
+        effect: { type: 'AUTHORITY_BUFF', value: 50, duration: 60 },
+      },
+    ]);
+    setLoadFailed(false);
+    setLoading(false);
   }, []);
 
   const loadOwnedItems = () => {

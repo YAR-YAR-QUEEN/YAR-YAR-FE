@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchUserItems } from '../services/itemService';
 import type { UserItemDto } from '../types/dto';
+import { getItemDisplayName, getItemImageSource } from '../utils/itemDisplay';
 
 interface InventoryPageProps {
   onNavigate?: (route: string) => void;
@@ -122,8 +124,14 @@ export function InventoryPage({ onNavigate }: InventoryPageProps) {
                   isSelected ? styles.itemCardSelectedDay : styles.itemCardDay,
                 ]}
               >
-                <Text style={styles.itemIcon}>{getItemIcon(item.type)}</Text>
-                <Text style={[styles.itemName, styles.textMainDay]}>{item.name}</Text>
+                <Image
+                  source={getItemImageSource(item)}
+                  style={styles.itemImage}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.itemName, styles.textMainDay]}>
+                  {getItemDisplayName(item)}
+                </Text>
                 <Text style={[styles.itemEffect, isSelected ? styles.itemEffectSelected : styles.textMutedDay]}>
                   {item.remainCount}개 보유
                 </Text>
@@ -245,6 +253,12 @@ const styles = StyleSheet.create({
   },
   itemIcon: {
     fontSize: 32,
+    marginBottom: 10,
+  },
+  itemImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
     marginBottom: 10,
   },
   itemName: {
