@@ -72,12 +72,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             )}
           </View>
 
-          {/* Notification Badge */}
-          <View style={styles.badgeContainer}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
-          </View>
         </View>
 
         {/* Main Action Button */}
@@ -255,26 +249,6 @@ const styles = StyleSheet.create({
   birdEmoji: {
     fontSize: 32,
     marginTop: 16,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: -8,
-    right: -8,
-  },
-  badge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ef4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
   },
   actionButton: {
     flexDirection: 'row',
