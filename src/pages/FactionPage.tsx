@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
-import { AuthorityGauge } from '../components/AuthorityGauge';
+import { FactionAuthorityFaceoff } from '../components/FactionAuthorityFaceoff';
 import { useGameState } from '../contexts/GameStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { applyMinsim } from '../services/minsimService';
@@ -156,7 +156,10 @@ export function FactionPage() {
         </View>
 
         <View style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}>
-          <AuthorityGauge value={gameState?.authority ?? 30} />
+          <FactionAuthorityFaceoff
+            authority={gameState?.authority ?? 30}
+            isNight={isNight}
+          />
         </View>
 
         <View style={styles.section}>
