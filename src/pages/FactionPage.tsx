@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import { useDayNight } from '../contexts/DayNightContext';
+import { AuthorityGauge } from '../components/AuthorityGauge';
 import { useGameState } from '../contexts/GameStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { applyMinsim } from '../services/minsimService';
@@ -28,6 +29,9 @@ export function FactionPage() {
   const opponentRate = Math.max(0, 100 - winRate);
   const displayWinRate = Math.min(100, winRate + (usedManipulationToday ? 5 : 0));
   const displayOpponentRate = Math.max(0, 100 - displayWinRate);
+  const authorityValue = Math.min(100, Math.max(0, gameState?.authority ?? 50));
+  const rightScale = Math.min(1.25, Math.max(0.75, 1 + (authorityValue / 100 - 0.5) * 0.5));
+  const leftScale = Math.min(1.25, Math.max(0.75, 1 + (0.5 - authorityValue / 100) * 0.5));
   const manipulationCost = 500;
   const isLockedToday = usedFightToday;
   const storageKey =
@@ -155,9 +159,23 @@ export function FactionPage() {
         </View>
 
         <View style={[styles.card, isNight ? styles.cardNight : styles.cardDay]}>
-          <Text style={[styles.cardPlaceholder, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-            권위 대결 UI 준비중
-          </Text>
+          <View style={styles.faceoffRow}>
+            <View style={styles.faceoffSide}>
+              <Image
+                source={require('../assets/character/daewongun.png')}
+                style={[styles.faceoffImage, { transform: [{ scale: leftScale }] }]}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.faceoffSide}>
+              <Image
+                source={require('../assets/character/hwanghoo.png')}
+                style={[styles.faceoffImage, { transform: [{ scale: rightScale }] }]}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+          <AuthorityGauge value={authorityValue} showTitle={false} showValues={false} />
         </View>
 
         <View style={styles.section}>
@@ -296,6 +314,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f172a',
     borderWidth: 1,
     borderColor: '#1e293b',
+  },
+  faceoffRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  faceoffSide: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  faceoffImage: {
+    width: 92,
+    height: 92,
+  },
+  faceoffLabel: {
+    fontSize: 11,
+    marginTop: 6,
+    fontWeight: '700',
   },
   section: {
     marginBottom: 16,

@@ -9,6 +9,7 @@ interface AuthorityGaugeProps {
   rightLabel?: string;
   title?: string;
   showTitle?: boolean;
+  showValues?: boolean;
 }
 
 function ScaleIcon({ color }: { color: string }) {
@@ -37,7 +38,8 @@ export function AuthorityGauge({
     leftLabel = "대원군",
     rightLabel = "황후",
     title = "현재 권위 상태",
-    showTitle = true, 
+    showTitle = true,
+    showValues = true,
 }: AuthorityGaugeProps) {
   const { isNight } = useDayNight();
   const clampedValue = Math.min(100, Math.max(0, value));
@@ -56,10 +58,11 @@ export function AuthorityGauge({
           </Text>
         </View>
       )}
+      {showValues ? (
       <View style={styles.headerRow}>
         <View style={styles.sideBlock}>
           <Text style={[styles.label, isNight ? styles.labelMuted : styles.labelWarm]}>
-            대원군
+            {leftLabel}
           </Text>
           <Text style={styles.sideValue}>{leftValue}%</Text>
         </View>
@@ -85,13 +88,14 @@ export function AuthorityGauge({
 
         <View style={[styles.sideBlock, styles.sideBlockRight]}>
           <Text style={[styles.label, isNight ? styles.labelBlue : styles.labelRed]}>
-            황후
+            {rightLabel}
           </Text>
           <Text style={[styles.sideValue, isNight ? styles.labelBlue : styles.labelRed]}>
             {clampedValue}%
           </Text>
         </View>
       </View>
+      ) : null}
 
     <View style={[styles.track, isNight ? styles.trackNight : styles.trackDay]}>
     {/* 대원군 (왼쪽) */}
@@ -114,10 +118,12 @@ export function AuthorityGauge({
     <View style={styles.centerMarker} />
     </View>
 
+      {showValues ? (
       <View style={styles.footerRow}>
-        <Text style={styles.footerText}>대원군</Text>
-        <Text style={styles.footerText}>개화파</Text>
+        <Text style={styles.footerText}>{leftLabel}</Text>
+        <Text style={styles.footerText}>{rightLabel}</Text>
       </View>
+      ) : null}
     </View>
   );
 }
