@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import Video from 'react-native-video';
@@ -61,11 +62,17 @@ export function ProfilePage() {
   const [reels, setReels] = useState<ReelsListItemDto[]>([]);
   const [reelsLoading, setReelsLoading] = useState(false);
   const [reelsFailed, setReelsFailed] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState<Record<number, boolean>>({});
   const [selectedReel, setSelectedReel] = useState<ReelsDetailDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const reelsScore = gameState?.reelsScore ?? 0;
   const reelsTier = getReelsTier(reelsScore);
+  const { width: screenWidth } = useWindowDimensions();
+  const gridGap = 8;
+  const gridPadding = 16;
+  const tileSize = Math.floor((screenWidth - gridPadding * 2 - gridGap * 2) / 3);
+  const safeTileSize = Math.max(90, tileSize);
 
   const stats = [
     { label: '도파민', value: gameState?.dopamine ?? 0, color: '#ef4444' },
@@ -166,27 +173,78 @@ export function ProfilePage() {
             {reelsFailed ? '릴스를 불러오지 못했어요.' : '아직 릴스가 없습니다.'}
           </Text>
         ) : null}
-
         <View style={styles.reelsGrid}>
-          {reels.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.85}
-              onPress={() => handleOpenReel(item.id)}
-              style={[styles.reelTile, isNight ? styles.reelTileNight : styles.reelTileDay]}
-            >
-              {item.thumbnailUrl ? (
-                <Image source={{ uri: item.thumbnailUrl }} style={styles.reelThumb} />
-              ) : null}
-              <Text style={styles.reelEmoji}>🎬</Text>
-              <Text style={[styles.reelTitle, isNight ? styles.textMainNight : styles.textMainDay]}>
-                #{item.id}
-              </Text>
-              <Text style={[styles.reelMeta, isNight ? styles.textMutedNight : styles.textMutedDay]}>
-                {item.reelsScore}점
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {reels.map((item, index) => {
+            const isEndOfRow = (index + 1) % 3 === 0;
+            const tileStyle = {
+              width: safeTileSize,
+              height: safeTileSize,
+              marginRight: isEndOfRow ? 0 : gridGap,
+              marginBottom: gridGap,
+            };
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.85}
+                onPress={() => handleOpenReel(item.id)}
+                style={[
+                  styles.reelTile,
+                  isNight ? styles.reelTileNight : styles.reelTileDay,
+                  tileStyle,
+                ]}
+              >
+                {item.thumbnailUrl && !thumbnailFailed[item.id] ? (
+                  <Image
+                    source={{ uri: item.thumbnailUrl }}
+                    style={styles.reelThumb}
+                    onLoad={() => {
+                      setThumbnailFailed((prev) => {
+                        if (!prev[item.id]) return prev;
+                        const next = { ...prev };
+                        delete next[item.id];
+                        return next;
+                      });
+                      console.log('Reels thumbnail load success', {
+                        id: item.id,
+                        url: item.thumbnailUrl,
+                      });
+                    }}
+                    onError={(event) => {
+                      setThumbnailFailed((prev) => ({
+                        ...prev,
+                        [item.id]: true,
+                      }));
+                      console.log('Reels thumbnail load failed', {
+                        id: item.id,
+                        url: item.thumbnailUrl,
+                        error: event.nativeEvent?.error,
+                      });
+                    }}
+                  />
+                ) : null}
+                {!item.thumbnailUrl || thumbnailFailed[item.id] ? (
+                  <View style={styles.reelFallback}>
+                    <Text style={styles.reelEmoji}>🎬</Text>
+                  </View>
+                ) : null}
+                <View
+                  style={[
+                    styles.reelScoreBadge,
+                    isNight ? styles.reelScoreBadgeNight : styles.reelScoreBadgeDay,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.reelScoreText,
+                      isNight ? styles.reelScoreTextNight : styles.reelScoreTextDay,
+                    ]}
+                  >
+                    점수: {item.reelsScore}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -348,15 +406,14 @@ const styles = StyleSheet.create({
   reelsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
   },
   reelTile: {
-    width: '31%',
     borderRadius: 12,
-    paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
     overflow: 'hidden',
+    justifyContent: 'center',
+    padding: 4,
   },
   reelTileDay: {
     backgroundColor: '#ffffff',
@@ -368,20 +425,44 @@ const styles = StyleSheet.create({
   },
   reelEmoji: {
     fontSize: 20,
-    marginBottom: 6,
   },
   reelThumb: {
-    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+    borderRadius: 10,
+    resizeMode: 'cover',
   },
-  reelTitle: {
-    fontSize: 12,
+  reelFallback: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  reelScoreBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  reelScoreBadgeDay: {
+    backgroundColor: 'rgba(250, 204, 21, 0.9)',
+  },
+  reelScoreBadgeNight: {
+    backgroundColor: 'rgba(96, 165, 250, 0.9)',
+  },
+  reelScoreText: {
+    fontSize: 10,
     fontWeight: '700',
   },
-  reelMeta: {
-    fontSize: 10,
-    marginTop: 2,
+  reelScoreTextDay: {
+    color: '#78350f',
+  },
+  reelScoreTextNight: {
+    color: '#0f172a',
   },
   modalOverlay: {
     flex: 1,
