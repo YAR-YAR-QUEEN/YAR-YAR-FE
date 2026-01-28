@@ -13,7 +13,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useAuth } from '../contexts/AuthContext';
 import { usePetition } from '../contexts/PetitionContext';
 import { useReels } from '../contexts/ReelsContext';
-import { uploadAndAnalyze } from '../services/reelsService';
+import { requestThumbnail, uploadAndAnalyze } from '../services/reelsService';
 
 interface FilmingPageProps {
   onNavigate?: (route: string) => void;
@@ -133,6 +133,7 @@ export function FilmingPage({ onNavigate }: FilmingPageProps) {
         userId: user.id,
         petitionId: selectedPetition?.id,
       });
+      void requestThumbnail(result.reelsId).catch(() => undefined);
       setAnalysisResult(result);
       onNavigate?.('/analysis');
     } catch (error) {

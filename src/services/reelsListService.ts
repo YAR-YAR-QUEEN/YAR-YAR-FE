@@ -9,6 +9,7 @@ export const fetchReelsList = async (userId: number): Promise<ReelsListItemDto[]
   return response.data.map((item) => ({
     id: item.id,
     videoUrl: item.videoUrl,
+    thumbnailUrl: item.thumbnailUrl ?? null,
     dopamine: item.dopamin,
     buzz: item.buzz,
     awareness: item.awareness,

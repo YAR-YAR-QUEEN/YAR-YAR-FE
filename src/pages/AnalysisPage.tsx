@@ -28,7 +28,7 @@ const FALLBACK = {
     '방금 촬영한 영상이 백성들의 공감을 얻을 가능성이 높습니다. 조금만 더 편집하면 좋겠습니다.',
   highlights: [
     '자연스러운 연기 (+1.2 도파민)',
-    '선명한 화면 (+0.8 버즈)',
+    '선명한 화면 (+0.8 화제성)',
     '깔끔한 구성 (+0.5 인지도)',
   ],
 };
@@ -54,10 +54,10 @@ const buildHighlights = (breakdown?: {
 
   pushEntries('도파민', breakdown.dopamine);
   if (results.length < 3) {
-    pushEntries('버즈', breakdown.virality);
+    pushEntries('화제성', breakdown.virality);
   }
   if (results.length < 3) {
-    pushEntries('난이도', breakdown.difficulty);
+    pushEntries('인지도', breakdown.difficulty);
   }
 
   return results.length ? results : FALLBACK.highlights;
@@ -137,7 +137,7 @@ export function AnalysisPage({ onNavigate }: AnalysisPageProps) {
         <View style={styles.metricsRow}>
           {[
             { label: '도파민', value: dopamine, icon: '🔥' },
-            { label: '버즈', value: buzz, icon: '⚡' },
+            { label: '화제성', value: buzz, icon: '⚡' },
             { label: '인지도', value: awareness, icon: '👀' },
           ].map((metric) => (
             <View key={metric.label} style={[styles.metricCard, styles.metricCardDay]}>
