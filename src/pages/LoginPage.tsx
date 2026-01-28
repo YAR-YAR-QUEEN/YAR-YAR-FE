@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   ImageBackground,
+  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -64,9 +65,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
       <View style={styles.card}>
         <View style={styles.titleBlock}>
-          <Text style={styles.title}>
-            야르야르{'\n'}못말리는 황후님
-          </Text>
+          <Image source={require('../assets/title.png')} style={styles.titleImage} />
           <Text style={styles.subtitle}>조선 최고의 숏폼 크리에이터가 되어보세요</Text>
         </View>
 
@@ -167,6 +166,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  titleImage: {
+    width: '100%',
+    maxWidth: 900,
+    height: 200,
+    resizeMode: 'contain',
+    marginBottom: 8,
+    alignSelf: 'center',
   },
   subtitle: {
     color: '#94a3b8',
