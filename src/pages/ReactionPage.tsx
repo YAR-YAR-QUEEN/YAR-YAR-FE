@@ -1,12 +1,129 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
+import { useAuth } from '../contexts/AuthContext';
+import { useGameState } from '../contexts/GameStateContext';
+import { fetchReelsList } from '../services/reelsListService';
+import { applyMinsim } from '../services/minsimService';
+
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isSameDate = (value: string, dateKey: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+  return toDateKey(parsed) === dateKey;
+};
+
+const formatScore = (value: number) => {
+  const rounded = Math.round(value * 10) / 10;
+  const hasDecimal = !Number.isInteger(rounded);
+  return rounded.toLocaleString(undefined, {
+    minimumFractionDigits: hasDecimal ? 1 : 0,
+    maximumFractionDigits: hasDecimal ? 1 : 0,
+  });
+};
 
 interface ReactionPageProps {
   onNavigate?: (route: string) => void;
 }
 
 export function ReactionPage({ onNavigate }: ReactionPageProps) {
+  const { user } = useAuth();
+  const { gameState, refresh } = useGameState();
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [totals, setTotals] = useState({
+    dopamine: 0,
+    buzz: 0,
+    awareness: 0,
+  });
+  const [reelsPower, setReelsPower] = useState(0);
+  const [earnedMinsim, setEarnedMinsim] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReels = async () => {
+      if (!user?.id) {
+        if (!cancelled) {
+          setTotals({ dopamine: 0, buzz: 0, awareness: 0 });
+          setReelsPower(0);
+          setEarnedMinsim(0);
+        }
+        return;
+      }
+
+      setLoading(true);
+      setLoadError('');
+      try {
+        const reels = await fetchReelsList(user.id);
+        const dateKey = toDateKey(new Date());
+        let dopamineSum = 0;
+        let buzzSum = 0;
+        let awarenessSum = 0;
+
+        reels.forEach((item) => {
+          if (!isSameDate(item.createdAt, dateKey)) {
+            return;
+          }
+          dopamineSum += item.dopamine;
+          buzzSum += item.buzz;
+          awarenessSum += item.awareness;
+        });
+
+        const nextReelsPower = dopamineSum + buzzSum + awarenessSum;
+        const nextMinsim = nextReelsPower * 5;
+
+        if (!cancelled) {
+          setTotals({
+            dopamine: dopamineSum,
+            buzz: buzzSum,
+            awareness: awarenessSum,
+          });
+          setReelsPower(nextReelsPower);
+          setEarnedMinsim(nextMinsim);
+        }
+
+        const settlementKey = `reels:settlement:${user.id}:${dateKey}`;
+        const stored = await AsyncStorage.getItem(settlementKey);
+        const settledPower = stored ? Number(stored) : 0;
+        const deltaPower = nextReelsPower - (Number.isNaN(settledPower) ? 0 : settledPower);
+
+        if (deltaPower > 0) {
+          await applyMinsim(user.id, {
+            amount: deltaPower * 5,
+            reason: 'REELS_SETTLEMENT',
+            refTable: 'reels',
+            refId: gameState?.dayCount,
+          });
+          await AsyncStorage.setItem(settlementKey, String(nextReelsPower));
+          refresh();
+        }
+      } catch {
+        if (!cancelled) {
+          setLoadError('릴스를 불러오지 못했어요.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadReels();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, gameState?.dayCount, refresh]);
+
   return (
     <View style={styles.container}>
       <View style={styles.frame} />
@@ -28,21 +145,31 @@ export function ReactionPage({ onNavigate }: ReactionPageProps) {
           <View style={styles.pulseRing} />
           <View style={styles.pulseInner}>
             <Feather name="heart" size={42} color="#ef4444" />
-            <Text style={styles.scoreValue}>+2,450</Text>
-            <Text style={styles.scoreLabel}>획득 민심</Text>
+            <Text style={styles.scoreValue}>+{formatScore(reelsPower)}</Text>
+            <Text style={styles.scoreLabel}>획득 릴스력</Text>
+            <Text style={styles.scoreSubLabel}>획득 민심 +{formatScore(earnedMinsim)}</Text>
           </View>
         </View>
 
         <View style={styles.statList}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>도파민 기여도</Text>
-            <Text style={styles.statValueRed}>+1,200</Text>
+            <Text style={styles.statValueRed}>+{formatScore(totals.dopamine)}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>화제성 보너스</Text>
-            <Text style={styles.statValueYellow}>+800</Text>
+            <Text style={styles.statValueYellow}>+{formatScore(totals.buzz)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>인지도 상승</Text>
+            <Text style={styles.statValueBlue}>+{formatScore(totals.awareness)}</Text>
           </View>
         </View>
+
+        {loading ? (
+          <ActivityIndicator color="#60a5fa" style={styles.loading} />
+        ) : null}
+        {loadError ? <Text style={styles.errorText}>{loadError}</Text> : null}
 
         <TouchableOpacity
           activeOpacity={0.9}
@@ -142,6 +269,11 @@ const styles = StyleSheet.create({
     color: '#93c5fd',
     marginTop: 4,
   },
+  scoreSubLabel: {
+    fontSize: 10,
+    color: '#cbd5f5',
+    marginTop: 4,
+  },
   statList: {
     width: '100%',
     maxWidth: 320,
@@ -171,6 +303,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#facc15',
+  },
+  statValueBlue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#60a5fa',
+  },
+  loading: {
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 12,
+    marginBottom: 12,
   },
   ctaButton: {
     width: '100%',
