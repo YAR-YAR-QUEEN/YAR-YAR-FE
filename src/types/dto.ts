@@ -26,9 +26,8 @@ export interface LoginRequestDto {
 	password: string;
 }
 
-export interface LoginResponseDto {
+export interface LoginResponseDto extends UserDto {
 	accessToken: string;
-	user: UserDto;
 }
 
 export interface TimeResponseDto {
