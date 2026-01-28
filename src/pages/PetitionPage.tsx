@@ -115,6 +115,11 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
     onNavigate?.('/street');
   };
 
+  const handleGoStreetWithoutPetition = () => {
+    setSelectedPetition(null);
+    onNavigate?.('/street');
+  };
+
   const missions: Mission[] = petitions.length
     ? petitions.map((petition) => ({
         id: petition.id,
@@ -153,6 +158,19 @@ export function PetitionPage({ onNavigate }: PetitionPageProps) {
               </Text>
             </View>
           ) : null}
+        </View>
+
+        <View style={styles.quickActionWrap}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[
+              styles.quickActionButton,
+              isNight ? styles.quickActionButtonNight : styles.quickActionButtonDay,
+            ]}
+            onPress={handleGoStreetWithoutPetition}
+          >
+            <Text style={styles.quickActionText}>상소문 없이 저잣거리 나가기</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.list}>
@@ -309,6 +327,25 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+  },
+  quickActionWrap: {
+    marginBottom: 12,
+  },
+  quickActionButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  quickActionButtonDay: {
+    backgroundColor: '#fb923c',
+  },
+  quickActionButtonNight: {
+    backgroundColor: '#2563eb',
+  },
+  quickActionText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   loadingWrap: {
     alignItems: 'center',

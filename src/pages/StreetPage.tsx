@@ -35,6 +35,16 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('/petition')}
+            style={styles.backButton}
+          >
+            <Feather name="arrow-left" size={18} color="#78350f" />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.header}>
           <Text style={[styles.title, styles.titleDay]}>저잣거리</Text>
           <Text style={[styles.subtitle, styles.subtitleDay]}>
@@ -95,7 +105,6 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
                 보유한 아이템으로 릴스 강화
               </Text>
             </View>
-            <Feather name="sparkles" size={18} color="#a16207" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -110,7 +119,6 @@ export function StreetPage({ onNavigate }: StreetPageProps) {
               <Text style={[styles.actionTitle, styles.textMainDay]}>릴스 촬영하기</Text>
               <Text style={[styles.actionDesc, styles.subtitleDay]}>오늘의 미션 수행</Text>
             </View>
-            <Text style={styles.actionEmoji}>📷</Text>
           </TouchableOpacity>
         </View>
 
@@ -157,6 +165,19 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 24,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(148, 163, 184, 0.25)',
   },
   title: {
     fontSize: 24,
@@ -270,9 +291,6 @@ const styles = StyleSheet.create({
   },
   actionDesc: {
     fontSize: 12,
-  },
-  actionEmoji: {
-    fontSize: 22,
   },
   footer: {
     marginTop: 'auto',
