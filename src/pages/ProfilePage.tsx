@@ -18,6 +18,42 @@ import { fetchReelsList } from '../services/reelsListService';
 import { fetchReelsDetail } from '../services/reelsDetailService';
 import type { ReelsListItemDto, ReelsDetailDto } from '../types/dto';
 
+const getReelsTier = (score: number) => {
+  if (score >= 10000) {
+    return {
+      label: '천하제일 릴스황',
+      image: require('../assets/tiers/tier_5.png'),
+      colors: { bg: '#fee2e2', text: '#b91c1c' },
+    };
+  }
+  if (score >= 6000) {
+    return {
+      label: '조선 밈 권력자',
+      image: require('../assets/tiers/tier_4.png'),
+      colors: { bg: '#ede9fe', text: '#6d28d9' },
+    };
+  }
+  if (score >= 3000) {
+    return {
+      label: '도성 인기 릴서',
+      image: require('../assets/tiers/tier_3.png'),
+      colors: { bg: '#dbeafe', text: '#1d4ed8' },
+    };
+  }
+  if (score >= 1000) {
+    return {
+      label: '저잣거리 릴서',
+      image: require('../assets/tiers/tier_2.png'),
+      colors: { bg: '#fef3c7', text: '#b45309' },
+    };
+  }
+  return {
+    label: '동네 인플루언서',
+    image: require('../assets/tiers/tier_1.png'),
+    colors: { bg: '#dcfce7', text: '#15803d' },
+  };
+};
+
 export function ProfilePage() {
   const { isNight } = useDayNight();
   const { gameState } = useGameState();
@@ -28,6 +64,8 @@ export function ProfilePage() {
   const [selectedReel, setSelectedReel] = useState<ReelsDetailDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
+  const reelsScore = gameState?.reelsScore ?? 0;
+  const reelsTier = getReelsTier(reelsScore);
 
   const stats = [
     { label: '도파민', value: gameState?.dopamine ?? 0, color: '#ef4444' },
@@ -82,14 +120,19 @@ export function ProfilePage() {
           <View style={styles.avatarWrap}>
             <View style={styles.avatarGradient}>
               <Image
-                source={{ uri: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Queen' }}
+                source={reelsTier.image}
                 style={styles.avatar}
               />
             </View>
           </View>
           <Text style={[styles.name, isNight ? styles.nameNight : styles.nameDay]}>
-            왕후
+            {user?.nickname ?? '??'}
           </Text>
+          <View style={[styles.tierBadge, { backgroundColor: reelsTier.colors.bg }]}>
+            <Text style={[styles.tierTitle, { color: reelsTier.colors.text }]}>
+              {reelsTier.label}
+            </Text>
+          </View>
 
           <View style={styles.statsGrid}>
             {stats.map((stat) => (
@@ -217,16 +260,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   avatarWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#f97316',
     padding: 3,
     marginBottom: 12,
   },
   avatarGradient: {
     flex: 1,
-    borderRadius: 48,
+    borderRadius: 60,
     overflow: 'hidden',
     backgroundColor: '#e2e8f0',
   },
@@ -245,6 +288,17 @@ const styles = StyleSheet.create({
   },
   nameNight: {
     color: '#f8fafc',
+  },
+  tierBadge: {
+    marginTop: 6,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  tierTitle: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -288,6 +342,8 @@ const styles = StyleSheet.create({
   reelsInfo: {
     fontSize: 12,
     marginBottom: 12,
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   reelsGrid: {
     flexDirection: 'row',
