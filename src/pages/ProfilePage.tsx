@@ -132,6 +132,9 @@ export function ProfilePage() {
               onPress={() => handleOpenReel(item.id)}
               style={[styles.reelTile, isNight ? styles.reelTileNight : styles.reelTileDay]}
             >
+              {item.thumbnailUrl ? (
+                <Image source={{ uri: item.thumbnailUrl }} style={styles.reelThumb} />
+              ) : null}
               <Text style={styles.reelEmoji}>🎬</Text>
               <Text style={[styles.reelTitle, isNight ? styles.textMainNight : styles.textMainDay]}>
                 #{item.id}
@@ -297,6 +300,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
+    overflow: 'hidden',
   },
   reelTileDay: {
     backgroundColor: '#ffffff',
@@ -309,6 +313,11 @@ const styles = StyleSheet.create({
   reelEmoji: {
     fontSize: 20,
     marginBottom: 6,
+  },
+  reelThumb: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
   reelTitle: {
     fontSize: 12,

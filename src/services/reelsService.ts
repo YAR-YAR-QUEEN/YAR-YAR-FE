@@ -32,3 +32,7 @@ export const uploadAndAnalyze = async (params: {
 
   return response.data;
 };
+
+export const requestThumbnail = async (reelsId: number): Promise<void> => {
+  await http.post(`/reels/${reelsId}/thumbnail`);
+};

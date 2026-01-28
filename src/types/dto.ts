@@ -171,6 +171,7 @@ export interface ReelsDto {
 export interface ReelsListItemDto {
 	id: number;
 	videoUrl: string;
+	thumbnailUrl?: string | null;
 	dopamine: number;
 	buzz: number;
 	awareness: number;
@@ -182,6 +183,7 @@ export interface ReelsListItemDto {
 export interface ReelsListItemResponseDto {
 	id: number;
 	videoUrl: string;
+	thumbnailUrl?: string | null;
 	dopamin: number;
 	buzz: number;
 	awareness: number;
@@ -193,6 +195,7 @@ export interface ReelsListItemResponseDto {
 export interface ReelsDetailDto {
 	id: number;
 	videoUrl: string;
+	thumbnailUrl?: string | null;
 	dopamine: number;
 	buzz: number;
 	awareness: number;
@@ -204,6 +207,7 @@ export interface ReelsDetailDto {
 export interface ReelsDetailResponseDto {
 	id: number;
 	videoUrl: string;
+	thumbnailUrl?: string | null;
 	dopamin: number;
 	buzz: number;
 	awareness: number;

@@ -8,6 +8,7 @@ export const fetchReelsDetail = async (reelsId: number): Promise<ReelsDetailDto>
   return {
     id: data.id,
     videoUrl: data.videoUrl,
+    thumbnailUrl: data.thumbnailUrl ?? null,
     dopamine: data.dopamin,
     buzz: data.buzz,
     awareness: data.awareness,
